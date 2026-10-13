@@ -40,3 +40,7 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Internal drafts & demo video scripts
+docs/DEMO_VIDEO_SCRIPT.md
+*DEMO_VIDEO_SCRIPT*

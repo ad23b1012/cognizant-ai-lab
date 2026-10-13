@@ -263,7 +263,6 @@ scheme_navigator/
 ├── data/
 │   └── schemes_db.json                  # Official verified schemes database (Central, AP, KA)
 ├── docs/
-│   ├── DEMO_VIDEO_SCRIPT.md             # Timed 2-3 minute hackathon demo video script
 │   └── PROJECT_SUMMARY.md               # 2-page executive hackathon submission summary
 ├── registries/
 │   ├── manifest.hocon                   # Agent network registry manifest
