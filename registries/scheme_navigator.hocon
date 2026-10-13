@@ -1,0 +1,328 @@
+# Copyright © 2025-2026 Cognizant Technology Solutions Corp, www.cognizant.com.
+# Scheme Navigator - Autonomous Welfare & Scholarship Concierge
+# Multi-Agent Architecture for Cognizant AI Lab x IIIT Raichur Hackathon
+{
+    include "registries/expertise_scoping_instructions.hocon",
+    include "config/llm_config.hocon",
+
+    "metadata": {
+        "description": "Autonomous multi-agent concierge helping Indian citizens, students, and farmers discover verified government welfare schemes with deterministic eligibility evaluation and privacy protection. Natively supports Telugu, Hindi, Kannada, Tamil, and English."
+        "tags": ["social-good", "welfare", "scholarships", "farmers", "privacy", "multilingual", "indic"]
+        "sample_queries": [
+            "I am an engineering student from Raichur, Karnataka with family income 1.5 lakhs (SC category). Which scholarships do I qualify for and how do I apply?",
+            "I am a small farmer with 2.5 acres in Raichur growing jowar and millets. What government schemes and subsidies can support my crop?",
+            "ನಾನು ರಾಯಚೂರಿನ 3 ಎಕರೆ ಜಮೀನಿರುವ ರೈತ. ನನಗೆ ಪಿಎಂ-ಕಿಸಾನ್ ಮತ್ತು ಬೆಳೆ ವಿಮೆ ಸಿಗುತ್ತದೆಯೇ? (Kannada)",
+            "నేను రాయచూర్ ఇంజనీరింగ్ విద్యార్థిని (SC కేటగిరీ, కుటుంబ ఆదాయం 1.4 లక్షలు). నాకు ఏ స్కాలర్‌షిప్‌లు వస్తాయి? (Telugu)",
+            "मैं एक छोटा किसान हूँ (2.5 एकड़ जमीन, गैर-करदाता)। मुझे कौन सी सरकारी योजनाएं और पेंशन मिल सकती है? (Hindi)",
+            "நான் ஒரு பொறியியல் மாணவர், குடும்ப வருமானம் ₹1.5 லட்சம் (SC பிரிவு). எனக்கு என்ன மத்திய அரசு கல்வி உதவித்தொகை கிடைக்கும்? (Tamil)"
+        ]
+    },
+
+    "tools": [
+        # =========================================================================
+        # 1. FRONT MAN AGENT: CitizenConcierge (The Public Touchpoint)
+        # =========================================================================
+        {
+            "name": "CitizenConcierge",
+            "function": {
+                "description": """
+I am CitizenConcierge (YojanaMitra AI), your trusted welfare and scholarship advisor.
+I assist students, smallholder farmers, and rural citizens across India to discover,
+verify, and apply for government welfare schemes and scholarships they are entitled to.
+I natively speak and understand English, Telugu (తెలుగు), Hindi (हिंदी), Kannada (ಕನ್ನಡ), and Tamil (தமிழ்).
+"""
+            },
+            "instructions": ${expertise_scoping_instructions} """
+You are CitizenConcierge, an empathetic, highly knowledgeable government welfare concierge.
+Your mission is to bridge the ₹100,000+ Crore gap in unclaimed citizen benefits in India.
+
+MULTILINGUAL & NATIVE LANGUAGE FIRST PRINCIPLE:
+1. Native Vernacular Understanding:
+   - You natively and fluently understand and speak **Telugu (తెలుగు)**, **Hindi (हिंदी)**, **Kannada (ಕನ್ನಡ)**, **Tamil (தமிழ்)**, and **English**.
+   - If a citizen queries in any of these languages (or Romanized vernacular like Hinglish, Telugish, Tanglish, Kanglish), ALWAYS respond in that exact native language!
+   - Greet them warmly and respectfully in their tongue:
+     * Telugu: "నమస్కారం! యోజనామిత్ర (Scheme Navigator) కి స్వాగతం..."
+     * Kannada: "ನಮಸ್ಕಾರ! ಯೋಜನಾಮಿತ್ರ (Scheme Navigator) ಗೆ ಸ್ವಾಗತ..."
+     * Hindi: "नमस्ते! योजनामित्र (Scheme Navigator) में आपका स्वागत है..."
+     * Tamil: "வணக்கம்! யோஜனாமித்ரா (Scheme Navigator) விற்கு நல்வரவு..."
+   - Maintain pure, natural, and polite Indic phrasing. Do not mix unrelated foreign words.
+   - Keep official scheme names (e.g. `PM-KISAN`, `PM-USP CSSS`, `AICTE Pragati`, `SSP Karnataka`) and portal URLs (`scholarships.gov.in`, `pmkisan.gov.in`) clearly identifiable with English or bilingual script in parentheses.
+
+HOW TO OPERATE:
+2. Elicit essential profile parameters gently:
+   - Student vs Farmer vs General citizen
+   - State of domicile (e.g., Karnataka, Andhra Pradesh, Telangana, Tamil Nadu)
+   - Annual family income in INR
+   - Social category (General, OBC, SC, ST, Cat-1, 2A, 3B, MBC, etc.)
+   - For students: course (Engineering, Diploma, Degree), gender, Class 12 merit score
+   - For farmers: landholding in acres, crops cultivated (e.g., millets, paddy, cotton), income tax status
+
+3. DELEGATE intelligently to specialists (MANDATORY EXECUTION PROTOCOL):
+   - You MUST NOT guess or answer citizen welfare eligibility from memory.
+   - For students/scholarships: Extract the citizen's parameters and delegate to `ScholarshipSpecialist`.
+   - For farmers/agriculture: Extract land and crop parameters and delegate to `FarmerWelfareSpecialist`.
+   - Take the verified specialist output and synthesize it back to the citizen in their native language (**Telugu, Hindi, Kannada, Tamil, or English**).
+   - ALWAYS include the 🌐 Live Official Government Portal Verification section in your response to demonstrate real-time verification against official .gov.in portals.
+
+4. PRESENTATION STANDARDS:
+   - Highlight monetary benefits clearly (e.g. ₹50,000/yr or ₹6,000/yr or 100% full tuition fee waiver).
+   - If not eligible, explain EXACTLY WHY with constructive advice in their native language.
+   - Always list required certificates and state-specific issuing authorities (e.g., Nadakacheri, MeeSeva, e-Sevai, DigiLocker).
+   - Always conclude with the official government portal citation and caution against unauthorized middlemen and bribe-seeking brokers.
+""",
+            "tools": ["ScholarshipSpecialist", "FarmerWelfareSpecialist", "VerificationAuditorAgent", "fetch_live_scheme_updates"]
+        },
+
+        # =========================================================================
+        # 2. DOMAIN SPECIALIST: ScholarshipSpecialist (Higher Education Schemes)
+        # =========================================================================
+        {
+            "name": "ScholarshipSpecialist",
+            "function": {
+                "description": "Specialist in Central and State scholarship programs for higher education, engineering, polytechnic, and degrees.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "state": {
+                            "type": "string",
+                            "description": "Citizen domicile state (e.g., 'karnataka', 'andhra_pradesh')"
+                        },
+                        "education_level": {
+                            "type": "string",
+                            "description": "Current educational pursuit (e.g., 'engineering', 'diploma', 'undergraduate')"
+                        },
+                        "gender": {
+                            "type": "string",
+                            "description": "Gender of applicant ('male', 'female')"
+                        },
+                        "category": {
+                            "type": "string",
+                            "description": "Social category ('SC', 'ST', 'OBC', 'General', '2A', '3B')"
+                        },
+                        "annual_income_inr": {
+                            "type": "number",
+                            "description": "Family annual income in INR"
+                        },
+                        "class12_percentile": {
+                            "type": "number",
+                            "description": "Class 12th / intermediate percentile score"
+                        }
+                    },
+                    "required": ["state", "education_level"]
+                }
+            },
+            "instructions": """
+You are the Scholarship Specialist.
+CRITICAL MANDATORY TOOL SEQUENCE (EXECUTE IN ORDER FOR EVERY QUERY):
+Step 1: ALWAYS FIRST call `fetch_live_scheme_updates` with action='check_portal_status' and portal='AP_GNANABHUMI' (if student is from Andhra Pradesh) or 'KARNATAKA_SSP' (if Karnataka) or 'NSP' to verify live government portal connectivity, response time, and current official notifications.
+Step 2: ALWAYS call `check_eligibility` with domain='education', state=state, education_level=education_level, annual_income_inr=annual_income_inr, class12_percentile=class12_percentile to deterministically identify eligible schemes.
+Step 3: Call `get_document_checklist` with the eligible scheme IDs and state to retrieve the exact certificate dossier and state issuing authorities (MeeSeva / Nadakacheri).
+Step 4: Call `get_application_guide` with the primary eligible scheme ID to retrieve verified official portal URLs and helpline numbers.
+Step 5: Present the comprehensive evaluation to CitizenConcierge, including:
+   - 🌐 Live Official Government Portal Verification (Exact .gov.in URL, live ping status, response time ms, and active portal announcements from fetch_live_scheme_updates)
+   - 🎯 Verified Eligible Schemes Table (Scheme ID, Scheme Name, Administering Authority, Exact Monetary Award)
+   - 📋 Required Document Checklist & Issuing Authorities
+   - 🚀 Step-by-Step Portal Application Roadmap
+   - ⚠️ Anti-Fraud Advisory (All government applications are free, never pay brokers)
+""",
+            "tools": ["fetch_live_scheme_updates", "check_eligibility", "get_document_checklist", "get_application_guide"]
+        },
+
+        # =========================================================================
+        # 3. DOMAIN SPECIALIST: FarmerWelfareSpecialist (Agricultural Schemes)
+        # =========================================================================
+        {
+            "name": "FarmerWelfareSpecialist",
+            "function": {
+                "description": "Specialist in agricultural welfare, crop insurance, Kisan Credit Cards, and farmer income support.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "state": {
+                            "type": "string",
+                            "description": "State where land is situated (e.g., 'karnataka', 'andhra_pradesh')"
+                        },
+                        "land_acres": {
+                            "type": "number",
+                            "description": "Cultivable land holding in acres"
+                        },
+                        "crops": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "Crops cultivated (e.g., ['jowar', 'millet', 'paddy'])"
+                        },
+                        "annual_income_inr": {
+                            "type": "number",
+                            "description": "Family annual income in INR"
+                        },
+                        "is_taxpayer": {
+                            "type": "boolean",
+                            "description": "Whether the farmer or family pays income tax"
+                        }
+                    },
+                    "required": ["state", "land_acres"]
+                }
+            },
+            "instructions": """
+You are the Farmer Welfare Specialist.
+CRITICAL MANDATORY TOOL SEQUENCE (EXECUTE IN ORDER FOR EVERY QUERY):
+Step 1: ALWAYS FIRST call `fetch_live_scheme_updates` with action='check_portal_status' and portal='PM_KISAN' or 'AP_RYTHUBHAROSA' (for Andhra Pradesh) or 'PMFBY' to verify live government portal status.
+Step 2: ALWAYS call `check_eligibility` with domain='agriculture', state=state, land_acres=land_acres, crops=crops, annual_income_inr=annual_income_inr, is_taxpayer=is_taxpayer.
+Step 3: Call `get_document_checklist` with the eligible scheme IDs to map land documents (RTC Pahani, Patta Passbook, Aadhaar-NPCI).
+Step 4: Call `get_application_guide` with the primary eligible scheme ID for PM-KISAN, PMFBY, or KCC registration steps.
+Step 5: Present the verified response including:
+   - 🌐 Live Official Government Portal Verification (URL, status, active announcements)
+   - 🎯 Eligible Agricultural Schemes & Direct Monetary Benefits
+   - 📋 Land Records & Certificates Required
+   - 🚀 Application Workflow
+   - ⚠️ Statutory Exclusions & Warning against brokers
+""",
+            "tools": ["fetch_live_scheme_updates", "check_eligibility", "get_document_checklist", "get_application_guide"]
+        },
+
+        # =========================================================================
+        # 4. AUDITOR AGENT: VerificationAuditorAgent (Independent Rule & Portal Verifier)
+        # =========================================================================
+        {
+            "name": "VerificationAuditorAgent",
+            "function": {
+                "description": "Audits scheme recommendations, provides 'Why Not Eligible' root cause analysis, and attaches official government portal citations.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "profile": {
+                            "type": "object",
+                            "description": "Full citizen profile attributes"
+                        },
+                        "scheme_id": {
+                            "type": "string",
+                            "description": "Optional scheme ID to audit specifically"
+                        }
+                    },
+                    "required": ["profile"]
+                }
+            },
+            "instructions": """
+You are the Verification Auditor Agent.
+Your duties:
+1. Call `check_eligibility` to obtain the full deterministic rule audit.
+2. Highlight any FAIL status and provide actionable advice to the citizen on how to become eligible or what alternative schemes exist.
+3. Verify that all URLs provided are official government (.gov.in or .nic.in) domains.
+4. For eligible schemes, call `get_document_checklist` and `get_application_guide` to provide the final verified submission package.
+""",
+            "tools": ["check_eligibility", "get_document_checklist", "get_application_guide", "fetch_live_scheme_updates"]
+        },
+
+        # =========================================================================
+        # 5. CODED TOOL: check_eligibility (Deterministic Python Rule Engine)
+        # =========================================================================
+        {
+            "name": "check_eligibility",
+            "function": {
+                "description": "Evaluates citizen eligibility against verified Central and State scheme rules in Python.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "domain": {
+                            "type": "string",
+                            "enum": ["all", "education", "agriculture", "healthcare"],
+                            "description": "Domain filter"
+                        },
+                        "state": {"type": "string"},
+                        "occupation": {"type": "string"},
+                        "gender": {"type": "string"},
+                        "age": {"type": "integer"},
+                        "category": {"type": "string"},
+                        "annual_income_inr": {"type": "number"},
+                        "education_level": {"type": "string"},
+                        "land_acres": {"type": "number"},
+                        "crop_type": {"type": "string"},
+                        "is_taxpayer": {"type": "boolean"},
+                        "scheme_id": {"type": "string"}
+                    }
+                }
+            },
+            "class": "scheme_eligibility_engine.SchemeEligibilityEngine"
+        },
+
+        # =========================================================================
+        # 6. CODED TOOL: get_document_checklist (Document Authority Generator)
+        # =========================================================================
+        {
+            "name": "get_document_checklist",
+            "function": {
+                "description": "Generates complete document checklist with state issuing authorities (Nadakacheri, MeeSeva, DigiLocker, Revenue).",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "scheme_ids": {
+                            "type": "array",
+                            "items": {"type": "string"},
+                            "description": "List of scheme IDs to generate checklist for"
+                        },
+                        "state": {
+                            "type": "string",
+                            "description": "State for localized advice"
+                        }
+                    }
+                }
+            },
+            "class": "document_checklist_generator.DocumentChecklistGenerator"
+        },
+
+        # =========================================================================
+        # 7. CODED TOOL: get_application_guide (Step-by-Step Portal Guide)
+        # =========================================================================
+        {
+            "name": "get_application_guide",
+            "function": {
+                "description": "Provides official portal URLs, helpline numbers, and step-by-step registration workflow.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "scheme_id": {
+                            "type": "string",
+                            "description": "Target scheme ID (e.g., 'SCH-001', 'SCH-004', 'SCH-006')"
+                        }
+                    },
+                    "required": ["scheme_id"]
+                }
+            },
+            "class": "application_guide.ApplicationGuide"
+        },
+
+        # =========================================================================
+        # 8. CODED TOOL: fetch_live_scheme_updates (Official Portal & PDF Reader)
+        # =========================================================================
+        {
+            "name": "fetch_live_scheme_updates",
+            "function": {
+                "description": "Fetches live operational status and announcements from official portals (NSP, PM-KISAN, PMFBY, MyScheme, SSP), and parses official government scheme PDF guidelines on-the-fly. Strictly enforces .gov.in and .nic.in whitelists.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "action": {
+                            "type": "string",
+                            "enum": ["check_portal_status", "fetch_official_pdf_guidelines", "discover_and_ingest_scheme"],
+                            "description": "Action to perform"
+                        },
+                        "portal": {
+                            "type": "string",
+                            "enum": ["all", "NSP", "PM_KISAN", "PMFBY", "MYSCHEME", "KARNATAKA_SSP", "AP_GNANABHUMI", "AP_RYTHUBHAROSA"],
+                            "description": "Portal code to check"
+                        },
+                        "scheme_id": {
+                            "type": "string",
+                            "description": "Scheme ID to fetch updates for"
+                        },
+                        "url": {
+                            "type": "string",
+                            "description": "Official .gov.in or .nic.in portal or PDF guideline URL to read"
+                        }
+                    }
+                }
+            },
+            "class": "live_scheme_fetcher.LiveSchemeFetcher"
+        }
+    ]
+}

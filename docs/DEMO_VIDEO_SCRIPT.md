@@ -1,0 +1,26 @@
+# 🎬 2-to-3 Minute Demo Video Script
+### Scheme Navigator (YojanaMitra AI)
+**Cognizant AI Lab × IIIT Raichur Agentic AI Hackathon**
+
+---
+
+## ⏱️ Video Breakdown (Target Duration: 2 Minutes 50 Seconds)
+
+| Timestamp | Section | Visual on Screen | Spoken Narration |
+|---|---|---|---|
+| **0:00 - 0:25** | **The Problem (Hook)** | Title slide / News headline on unclaimed welfare schemes in India. | *"Hello judges. In India, over ₹3 Lakh Crore is allocated annually for welfare schemes and scholarships. Yet, more than ₹1 Lakh Crore goes unclaimed every year. Consider an undergraduate student right here at a premier technical institute in Raichur whose family doesn't know they qualify for premier institute scholarships. Or consider a young smallholder farmer in rural Raichur unaware of matching pensions and crop subsidies. Today, we introduce Scheme Navigator, an autonomous multi-agent welfare concierge built on Cognizant's Neuro-SAN framework."* |
+| **0:25 - 0:55** | **Architecture & Neuro-SAN Graph** | Show `nsflow` UI at `http://localhost:4173` with the agent network diagram. | *"Scheme Navigator is built strictly on Neuro-SAN Studio with a resilient dual-tier LLM architecture: primary Google Gemini 3 Flash with instant zero-downtime failover to OpenRouter NVIDIA Nemotron. Unlike naive chatbots that hallucinate government cutoffs, our architecture pairs conversational agents with deterministic Python CodedTools. Our Front Man, CitizenConcierge, interacts natively with citizens across Telugu, Hindi, Kannada, Tamil, or English. It delegates to domain specialists: Scholarship Specialist and Farmer Welfare Specialist. Furthermore, sensitive citizen data like income and caste quotas are protected through Neuro-SAN's sly_data, ensuring zero financial data leakage into the LLM prompt."* |
+| **0:55 - 1:30** | **Live Demo 1: The Technical Student** | Run `python demo_cli.py` -> Select Option 1 (Undergraduate Student). | *"Let's run our first scenario: Applicant 1, an undergraduate student from Raichur. Watch the multi-agent lifecycle in action: Front Man decomposes the intent -> sly_data vaults the ₹1.4 Lakh income out-of-band -> Scholarship Specialist calls our SchemeEligibilityEngine CodedTool. In under a second, the system identifies that the student qualifies for 3 major schemes: EDU-001 PM-USP Central Sector Scholarship, EDU-003 Top Class Education for SC Students at premier institutes like IIIT Raichur, and EDU-005 Post-Matric SC Scholarship. Notice how the Document Checklist Agent generates the exact OTR requirements and DigiLocker tips so the application isn't rejected."* |
+| **1:30 - 2:00** | **Live Demo 2: Smallholder Cultivator** | Run `python demo_cli.py` -> Select Option 2 (Smallholder Cultivator). | *"Now let's examine Applicant 2, a 28-year-old farmer in rural Raichur with 3.0 acres. The Farmer Welfare Specialist triggers the eligibility engine. The cultivator qualifies for FARM-001 PM-KISAN ₹6,000 direct benefit, FARM-002 PMFBY crop insurance at 1.5% premium, FARM-003 Kisan Credit Card, FARM-004 PMKSY micro-irrigation, and FARM-005 PM-KMY assured pension of ₹3,000/month after age 60. Every recommendation includes official .gov.in links and operational portal statuses."* |
+| **2:00 - 2:25** | **Live Demo 3: Live Portal Monitor & PDF Guideline Parser** | Run `python demo_cli.py` -> Select Option 6 (Live Portal Monitor & PDF Inspector). | *"Next, see how we guarantee zero misinformation: Option 6 pings live Indian government portals—NSP, PM-KISAN, PMFBY, and Karnataka SSP. Watch our anti-phishing guardrail instantly block unofficial third-party broker URLs. Furthermore, our LiveSchemeFetcher parses official statutory PDF gazettes on-the-fly using pypdf, extracting income ceilings and benefit amounts directly from verified government publications."* |
+| **2:25 - 2:45** | **Live Demo 4: Transparent Rejection Audit** | Run `python demo_cli.py` -> Select Option 4 (Taxpayer Audit Case). | *"What happens when a citizen is not eligible? Rather than a vague rejection, our Verification Auditor Agent performs a statutory root-cause analysis. For an applicant who filed income taxes asking why their PM-KISAN was rejected, it pinpoints the exact statutory clause: 'Income tax payees in previous assessment year are disqualified,' and immediately provides actionable advice on alternate NABARD farm-credit schemes."* |
+| **2:45 - 2:50** | **Conclusion & Impact** | Show test suite `13 passed in 0.65s` and Project Summary slide. | *"With 100% test coverage across 13 automated unit tests, deterministic Python logic, live government portal verification, and true privacy preservation through sly_data, Scheme Navigator transforms confusing bureaucracy into an accessible, empathetic concierge for every Indian citizen. Thank you to Cognizant AI Lab and IIIT Raichur!"* |
+
+---
+
+## 💡 Tips for Recording the Video
+1. Use **OBS Studio** or Mac Screen Recording (`Cmd + Shift + 5`).
+2. Have `http://localhost:4173` open in one tab showing `nsflow` UI and terminal open in another running `python demo_cli.py`.
+3. Speak clearly, following the timestamp cues above.
+4. Keep the total video length strictly between **2:30 and 2:55 minutes** to stay well within hackathon judging limits!
+

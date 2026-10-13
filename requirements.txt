@@ -1,0 +1,28 @@
+# Core Neuro-SAN & Multi-Agent Framework
+neuro-san>=0.7.7
+nsflow>=0.7.4
+pyhocon>=0.3.63
+fastapi>=0.143.0
+uvicorn>=0.54.0
+
+# LLM Integrations
+langchain>=1.4.5
+langchain-core>=1.6.10
+langchain-google-genai>=4.4.1
+google-genai>=2.30.0
+langchain-openrouter>=0.2.9
+openrouter>=0.11.46
+
+# Document & Live Government Data Processing
+pypdf>=6.20.1
+beautifulsoup4>=4.15.0
+requests>=2.34.2
+urllib3>=2.8.0
+
+# CLI Console & Utilities
+rich>=15.0.0
+python-dotenv>=1.2.4
+pydantic>=2.12.5
+
+# Automated Testing
+pytest>=9.1.1

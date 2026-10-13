@@ -1,0 +1,503 @@
+{
+  "metadata": {
+    "title": "Verified Indian Government Education Scholarships and Farmer Schemes",
+    "as_of": "2026-10-13",
+    "count": 13,
+    "categories": {
+      "education_scholarships": 8,
+      "farmer_schemes": 5
+    },
+    "verification_policy": "Scheme descriptions are based on official Government of India portals or official scheme portals. Eligibility, benefits, rates, institution lists, state implementation, and application windows can change; applicants must check the linked official portal and current guidelines before applying. No scheme is described as universally open unless the official portal confirms it.",
+    "currency": "INR",
+    "notes": [
+      "These are curated schemes, not a ranking of guaranteed benefits or eligibility.",
+      "The National Scholarship Portal lists academic-year-specific application and verification dates. Dates in the portal can change.",
+      "For state-implemented schemes, availability and operational details may vary by state."
+    ]
+  },
+  "schemes": [
+    {
+      "id": "EDU-001",
+      "category": "education_scholarship",
+      "name": "PM-USP Central Sector Scheme of Scholarship for College and University Students (CSSS)",
+      "government_level": "Central",
+      "administering_authority": "Department of Higher Education, Ministry of Education",
+      "purpose": "Provides financial assistance to meritorious students from families with limited income to help them continue higher education after Class XII.",
+      "benefits": {
+        "summary": "Scholarship support is provided at the rates and for the course stages specified in the current scheme guidelines.",
+        "amount_note": "Check the current CSSS guidelines on the official portal for the applicable annual amount, course stage, renewal conditions, and payment rules; do not rely on older summaries."
+      },
+      "eligibility": [
+        "Applicants must satisfy the current merit/ranking criteria based on Class XII results and the applicable board-wise selection procedure.",
+        "Family income must be within the ceiling specified in the current CSSS guidelines.",
+        "The student must be pursuing an eligible regular course at a recognised institution and meet the scheme's other conditions.",
+        "Renewal depends on the prescribed academic performance, attendance, and other conditions in the current guidelines."
+      ],
+      "how_to_apply": [
+        "Complete One Time Registration (OTR) on the National Scholarship Portal.",
+        "Choose the CSSS application for the relevant academic year and submit accurate details and required documents.",
+        "Ensure institution and authority verification is completed before the portal deadline."
+      ],
+      "documents_commonly_needed": [
+        "OTR details",
+        "Class XII marksheet",
+        "Income certificate or prescribed income declaration",
+        "Bank account details",
+        "Aadhaar or other identification as required",
+        "Institution/course details"
+      ],
+      "application_status_as_of": "The NSP's 2026-27 page stated that renewal applications were open with a student deadline of 31 October 2026. Confirm the live portal for fresh/renewal eligibility and any revised deadlines.",
+      "official_application_url": "https://scholarships.gov.in/All-Scholarships",
+      "official_source_urls": [
+        "https://scholarships.gov.in/All-Scholarships",
+        "https://scholarships.gov.in/Students"
+      ],
+      "verification_notes": "The live NSP listing confirms the scheme's presence and 2026-27 portal information. Exact eligibility and rates should be taken from the linked current-year scheme specification/FAQ."
+    },
+    {
+      "id": "EDU-002",
+      "category": "education_scholarship",
+      "name": "National Means-cum-Merit Scholarship Scheme (NMMSS)",
+      "government_level": "Central",
+      "administering_authority": "Department of School Education and Literacy, Ministry of Education",
+      "purpose": "Helps meritorious students from economically weaker sections continue their education at the secondary stage and reduce dropout after Class VIII.",
+      "benefits": {
+        "amount": "\u20b912,000 per year",
+        "duration": "Normally from Class IX through Class XII, subject to selection, renewal, and scheme conditions."
+      },
+      "eligibility": [
+        "Student must be selected through the state/UT-level selection examination and satisfy current scheme requirements.",
+        "Parental income and minimum academic marks must meet the current guidelines.",
+        "Student must attend an eligible government, government-aided, or local-body school; excluded school categories and other conditions are set by the current guidelines."
+      ],
+      "how_to_apply": [
+        "Check the state/UT education department's NMMSS examination notification and apply through its prescribed process.",
+        "After selection, complete the scholarship application/renewal process on the National Scholarship Portal as directed."
+      ],
+      "documents_commonly_needed": [
+        "Previous class marksheet",
+        "Income certificate",
+        "School certificate",
+        "Bank account details",
+        "Aadhaar/identity details as required",
+        "Caste/disability certificate if relevant under applicable rules"
+      ],
+      "application_status_as_of": "Application and selection timelines are state/UT-specific; check the current state examination notice and NSP.",
+      "official_application_url": "https://scholarships.gov.in/",
+      "official_source_urls": [
+        "https://www.education.gov.in/",
+        "https://scholarships.gov.in/All-Scholarships"
+      ],
+      "verification_notes": "The Ministry of Education's official material identifies the scheme and the \u20b912,000 annual scholarship. Verify the latest income threshold, marks, school exclusions, and process in current guidelines."
+    },
+    {
+      "id": "EDU-003",
+      "category": "education_scholarship",
+      "name": "Central Sector Scholarship of Top Class Education for SC Students",
+      "government_level": "Central",
+      "administering_authority": "Department of Social Justice and Empowerment, Ministry of Social Justice and Empowerment",
+      "purpose": "Supports eligible Scheduled Caste students pursuing studies beyond Class XII in institutions notified under the scheme.",
+      "benefits": {
+        "summary": "Financial support for eligible costs as defined in the current guidelines, potentially including tuition and specified academic/living allowances.",
+        "amount_note": "Amounts, covered components, income ceiling, institution list, and slot limits must be checked in the current 2026-27 guidelines."
+      },
+      "eligibility": [
+        "Applicant must belong to the Scheduled Caste category and meet the current family-income ceiling.",
+        "Admission must be in an institution/course covered by the current notified list and scheme rules.",
+        "Selection, slot availability, and other conditions are governed by the current guidelines."
+      ],
+      "how_to_apply": [
+        "Check the current 2026-27 scheme guidelines and notified institution list on the Ministry website.",
+        "Apply through the National Scholarship Portal when the scheme application window is available.",
+        "Submit the required category, income, admission, and bank details and complete verification."
+      ],
+      "documents_commonly_needed": [
+        "SC certificate",
+        "Income certificate",
+        "Class XII marksheet",
+        "Admission/fee documents",
+        "Bank details",
+        "Aadhaar/OTR details as required"
+      ],
+      "application_status_as_of": "The Ministry of Social Justice and Empowerment published 2026-27 guidelines on 24 June 2026. Check NSP for the live application window.",
+      "official_application_url": "https://scholarships.gov.in/",
+      "official_source_urls": [
+        "https://socialjustice.gov.in/index.php/schemes/27",
+        "https://socialjustice.gov.in/whats-new/1493",
+        "https://scholarships.gov.in/All-Scholarships"
+      ],
+      "verification_notes": "The Ministry's scheme page and 2026-27 guideline listing are authoritative. Do not infer a benefit amount without consulting the current guidelines."
+    },
+    {
+      "id": "EDU-004",
+      "category": "education_scholarship",
+      "name": "National Fellowship and Scholarship for Higher Education of ST Students \u2014 Scholarship component (Top Class)",
+      "government_level": "Central",
+      "administering_authority": "Ministry of Tribal Affairs",
+      "purpose": "Supports eligible Scheduled Tribe students pursuing specified higher/professional education in institutions identified by the Ministry.",
+      "benefits": {
+        "summary": "Support can include tuition/admission and other eligible fees, stipend/living support, and book/computer allowances, as provided in the current guidelines.",
+        "amount_note": "The precise limits, covered costs, number of fresh awards, and eligible institution list must be confirmed in the current scheme guidelines."
+      },
+      "eligibility": [
+        "Applicant must be an ST student.",
+        "Family income must satisfy the scheme's current ceiling; the Ministry's scheme page has published a \u20b96 lakh annual ceiling, which should be reconfirmed against current guidelines.",
+        "Course and institution must be covered by the current notified list, and selection is subject to merit and scheme rules."
+      ],
+      "how_to_apply": [
+        "Review the Ministry of Tribal Affairs' current Top Class scholarship guidelines and eligible institution list.",
+        "Apply through the National Scholarship Portal when the scheme is open.",
+        "Complete OTR, upload required documents, and follow institution/authority verification."
+      ],
+      "documents_commonly_needed": [
+        "ST certificate",
+        "Income certificate",
+        "Class XII marksheet",
+        "Admission proof",
+        "Bank details",
+        "Aadhaar/OTR details as required"
+      ],
+      "application_status_as_of": "The NSP listing showed the scheme for academic year 2026-27 with a student application deadline of 31 October 2026. Verify the live portal before applying.",
+      "official_application_url": "https://scholarships.gov.in/All-Scholarships",
+      "official_source_urls": [
+        "https://tribal.nic.in/Scholarship.aspx",
+        "https://scholarships.gov.in/All-Scholarships"
+      ],
+      "verification_notes": "The Ministry of Tribal Affairs confirms the scheme and its broad coverage. Use the current official guidelines for final eligibility and benefit limits."
+    },
+    {
+      "id": "EDU-005",
+      "category": "education_scholarship",
+      "name": "Post-Matric Scholarship for Scheduled Caste Students (PMS-SC)",
+      "government_level": "Central and State/UT implementation",
+      "administering_authority": "Department of Social Justice and Empowerment, with State/UT governments implementing the scheme",
+      "purpose": "Provides educational financial assistance to eligible SC students studying at post-matriculation or post-secondary level to help them complete their education.",
+      "benefits": {
+        "summary": "Scholarship support and eligible compulsory/non-refundable fees and maintenance allowance are determined under the current scheme rules and the student's course category.",
+        "amount_note": "Do not use a single universal amount: the payable amount depends on course group, eligible charges, state implementation, and current guidelines."
+      },
+      "eligibility": [
+        "Applicant must belong to the Scheduled Caste category.",
+        "The course/institution must be eligible under current scheme rules.",
+        "Family income must be within the applicable ceiling and the student must meet other current conditions."
+      ],
+      "how_to_apply": [
+        "Check the state/UT scholarship portal and the National Scholarship Portal for the applicable application route.",
+        "Complete the application with caste, income, course, institution, and bank details.",
+        "Track institute and government verification; retain acknowledgement and application number."
+      ],
+      "documents_commonly_needed": [
+        "SC certificate",
+        "Income certificate",
+        "Previous examination marksheet",
+        "Admission/fee receipt",
+        "Bank account details",
+        "Aadhaar/identity details as required"
+      ],
+      "application_status_as_of": "Application windows and implementation steps vary by state/UT and academic year. Confirm the current portal notice.",
+      "official_application_url": "https://scholarships.gov.in/",
+      "official_source_urls": [
+        "https://socialjustice.gov.in/common/19536",
+        "https://socialjustice.gov.in/index.php/schemes",
+        "https://scholarships.gov.in/All-Scholarships"
+      ],
+      "verification_notes": "The Department of Social Justice and Empowerment identifies PMS-SC as a centrally sponsored scheme. The state/UT portal determines the applicable process and current-year timeline."
+    },
+    {
+      "id": "FARM-001",
+      "category": "farmer_scheme",
+      "name": "Pradhan Mantri Kisan Samman Nidhi (PM-KISAN)",
+      "government_level": "Central",
+      "administering_authority": "Department of Agriculture and Farmers Welfare, Ministry of Agriculture and Farmers Welfare",
+      "purpose": "Provides income support to eligible landholding farmer families to help meet agricultural input and related household needs.",
+      "benefits": {
+        "amount": "\u20b96,000 per eligible farmer family per year",
+        "payment_frequency": "Paid in three instalments of \u20b92,000 each, subject to eligibility and successful verification."
+      },
+      "eligibility": [
+        "Eligible landholding farmer families with cultivable land, subject to the scheme's operational guidelines.",
+        "Exclusion categories apply, including specified institutional landholders and certain higher-income/professional or public-office categories.",
+        "Land records, Aadhaar/e-KYC, bank account and other required records must satisfy current verification requirements."
+      ],
+      "how_to_apply": [
+        "Use the official PM-KISAN portal's New Farmer Registration facility or seek assistance from the designated local agriculture/revenue office.",
+        "Complete e-KYC and ensure land records and bank/Aadhaar details match.",
+        "Use the official beneficiary status page to check registration and payment status."
+      ],
+      "documents_commonly_needed": [
+        "Aadhaar",
+        "Bank account details",
+        "Landholding/land-record details",
+        "Mobile number",
+        "Other state-specific records if requested"
+      ],
+      "application_status_as_of": "The scheme portal is active; eligibility and payment status must be checked against current records and official portal notices.",
+      "official_application_url": "https://pmkisan.gov.in/",
+      "official_source_urls": [
+        "https://pmkisan.gov.in/",
+        "https://pmkisan.gov.in/Rpt_BeneficiaryStatus_pub.aspx"
+      ],
+      "verification_notes": "The official PM-KISAN portal and operational guidelines are the source of truth for exclusions, registration, e-KYC and payment status."
+    },
+    {
+      "id": "FARM-002",
+      "category": "farmer_scheme",
+      "name": "Pradhan Mantri Fasal Bima Yojana (PMFBY)",
+      "government_level": "Central, implemented with participating States/UTs",
+      "administering_authority": "Ministry of Agriculture and Farmers Welfare",
+      "purpose": "Provides crop insurance protection against notified crop losses caused by specified natural risks and other covered perils, helping stabilise farm income.",
+      "benefits": {
+        "summary": "Insurance indemnity for covered losses, subject to notified crops/areas, policy terms, assessment procedures, and applicable exclusions.",
+        "farmer_premium_note": "For notified food and oilseed crops, farmer premium rates are generally capped at 2% for Kharif, 1.5% for Rabi, and 5% for annual commercial/horticultural crops; confirm the season's notification and crop-specific terms."
+      },
+      "eligibility": [
+        "Farmers growing notified crops in notified insurance units/areas during the applicable season.",
+        "Both owner cultivators and eligible tenant/sharecropper farmers may be covered when they meet the state's documentation and scheme requirements.",
+        "Enrollment deadlines, documents and notified crops/areas vary by state and season."
+      ],
+      "how_to_apply": [
+        "Check whether the crop and area are notified for the current season on the official PMFBY portal or through the state agriculture department.",
+        "Apply through the official portal, authorised channel, bank, or designated Common Service Centre as permitted for that season.",
+        "Keep the application acknowledgement, land/cultivation documents, bank details, and policy information."
+      ],
+      "documents_commonly_needed": [
+        "Aadhaar/identity proof",
+        "Bank details",
+        "Land records or valid cultivation/tenancy evidence",
+        "Sowing declaration and crop details",
+        "Other documents required by state/season"
+      ],
+      "application_status_as_of": "Season-specific; check the official portal for the current state, crop, insurer, and last date.",
+      "official_application_url": "https://www.pmfby.gov.in/",
+      "official_source_urls": [
+        "https://www.pmfby.gov.in/faq",
+        "https://www.pmfby.gov.in/"
+      ],
+      "verification_notes": "PMFBY's official FAQ explains its crop-loss protection objective. Premiums and enrollment are tied to notified crops, seasons and state notifications; not every crop/area is automatically covered."
+    },
+    {
+      "id": "FARM-003",
+      "category": "farmer_scheme",
+      "name": "Kisan Credit Card (KCC)",
+      "government_level": "Central framework delivered through participating banks",
+      "administering_authority": "Government of India/RBI/NABARD framework, delivered by eligible banks",
+      "purpose": "Provides eligible farmers with revolving credit for cultivation expenses and other permitted agricultural and allied activities, subject to bank appraisal and scheme rules.",
+      "benefits": {
+        "summary": "Access to a bank-sanctioned credit limit for eligible farming needs; limit, interest, collateral/security and repayment terms depend on the applicable rules and bank sanction.",
+        "interest_note": "Interest subvention or prompt-repayment benefits, where applicable, are governed by current Government/RBI directions and bank terms; do not assume every borrower receives the same effective rate."
+      },
+      "eligibility": [
+        "Owner cultivators, individually or jointly.",
+        "Tenant farmers, oral lessees and sharecroppers, subject to bank documentation and rules.",
+        "Eligible self-help groups and joint liability groups of farmers, including tenant/sharecropper groups."
+      ],
+      "how_to_apply": [
+        "Apply through a participating bank's official website/branch or the route listed by the bank.",
+        "Provide the application and identity, address, land/cultivation and other requested documents.",
+        "The bank assesses eligibility and sanctions a limit under its applicable rules."
+      ],
+      "documents_commonly_needed": [
+        "Application form",
+        "Identity proof",
+        "Address proof",
+        "Photographs",
+        "Land/cultivation details",
+        "Bank-requested supporting documents"
+      ],
+      "application_status_as_of": "Applications are handled by participating banks; product availability and processing requirements are bank-specific.",
+      "official_application_url": "https://www.myscheme.gov.in/schemes/kcc",
+      "official_source_urls": [
+        "https://www.myscheme.gov.in/schemes/kcc"
+      ],
+      "verification_notes": "The Government of India's myScheme page lists eligible applicant categories and application routes. The sanction amount and terms are not guaranteed by the scheme listing."
+    },
+    {
+      "id": "FARM-004",
+      "category": "farmer_scheme",
+      "name": "Pradhan Mantri Krishi Sinchayee Yojana (PMKSY) \u2014 Per Drop More Crop (PDMC)",
+      "government_level": "Central scheme implemented through States/UTs",
+      "administering_authority": "Department of Agriculture and Farmers Welfare and designated State/UT implementing departments",
+      "purpose": "Promotes water-use efficiency at farm level, particularly micro-irrigation such as drip and sprinkler systems, to improve irrigation efficiency and crop productivity.",
+      "benefits": {
+        "summary": "Eligible assistance for approved micro-irrigation systems, subject to current central/state guidelines, beneficiary category, cost norms, area limits and available allocation.",
+        "amount_note": "Subsidy rates and limits can differ by state and beneficiary category; no universal subsidy percentage is promised here."
+      },
+      "eligibility": [
+        "Farmers meeting the current state/UT programme criteria and installing eligible systems through the approved process.",
+        "Land, crop, system specifications, prior-benefit restrictions and other conditions are determined by current guidelines and state implementation."
+      ],
+      "how_to_apply": [
+        "Contact the state agriculture/horticulture or designated micro-irrigation department.",
+        "Confirm the current beneficiary registration process, approved equipment/vendor requirements and subsidy norms before purchase or installation.",
+        "Complete inspection/verification and documentation required by the implementing agency."
+      ],
+      "documents_commonly_needed": [
+        "Identity proof",
+        "Land records/lease evidence as accepted",
+        "Bank details",
+        "Farm and irrigation details",
+        "Quotation/system specifications",
+        "Other state-required documents"
+      ],
+      "application_status_as_of": "Implementation and application windows are state-specific; confirm the currently active component and allocation with the State/UT department.",
+      "official_application_url": "https://pmksy.gov.in/",
+      "official_source_urls": [
+        "https://pmksy.gov.in/",
+        "https://pmksy.gov.in/microirrigation/Archive/Revised%20PDMC%20GL%202021.pdf"
+      ],
+      "verification_notes": "The official PMKSY portal and PDMC operational guidelines describe the programme framework. The linked guidelines are an archived/revised document; applicants must obtain current state norms before making a purchase."
+    },
+    {
+      "id": "FARM-005",
+      "category": "farmer_scheme",
+      "name": "Pradhan Mantri Kisan Maandhan Yojana (PM-KMY)",
+      "government_level": "Central",
+      "administering_authority": "Ministry of Agriculture and Farmers Welfare, Government of India",
+      "purpose": "A voluntary and contributory pension scheme intended to provide old-age social security to eligible small and marginal farmers.",
+      "benefits": {
+        "amount": "Assured pension of \u20b93,000 per month after attaining 60 years of age, subject to scheme conditions.",
+        "contribution_note": "Eligible enrolled farmers contribute a monthly amount based on entry age; the Central Government makes a matching contribution under scheme rules."
+      },
+      "eligibility": [
+        "Generally intended for small and marginal farmers aged 18\u201340 years with cultivable landholding up to 2 hectares, subject to current scheme conditions.",
+        "Specified exclusions apply, including categories covered by other statutory social security schemes or certain pension/taxpayer categories as defined in the guidelines.",
+        "Confirm current eligibility and exclusions with the official portal or a designated enrolment centre."
+      ],
+      "how_to_apply": [
+        "Check the official PM-KMY portal for current eligibility and enrolment instructions.",
+        "Enrol through the authorised Common Service Centre or other official route stated by the scheme.",
+        "Provide identity, landholding, bank and contact details and authorise the prescribed contribution mechanism."
+      ],
+      "documents_commonly_needed": [
+        "Aadhaar",
+        "Bank account details",
+        "Landholding records",
+        "Mobile number",
+        "Other details required by the enrolment system"
+      ],
+      "application_status_as_of": "Confirm live enrolment availability and current conditions through the official portal or authorised CSC.",
+      "official_application_url": "https://maandhan.in/",
+      "official_source_urls": [
+        "https://maandhan.in/",
+        "https://www.myscheme.gov.in/"
+      ],
+      "verification_notes": "Pension eligibility and contribution depend on age at entry and scheme rules. The pension is not an immediate cash grant and requires enrolment and contributions."
+    },
+    {
+      "id": "AP-EDU-001",
+      "category": "education_scholarship",
+      "name": "Jagananna Vidya Deevena (RTF - Full Tuition Fee Reimbursement)",
+      "government_level": "State (Andhra Pradesh)",
+      "administering_authority": "Social Welfare & Higher Education Department, Government of Andhra Pradesh",
+      "purpose": "Provides 100% complete tuition fee reimbursement directly to eligible students pursuing Polytechnic, ITI, Degree, B.Tech/Engineering, MCA, MBA, and Pharmacy courses in Andhra Pradesh.",
+      "benefits": {
+        "amount": "100% Full Tuition Fee Reimbursement",
+        "summary": "100% full tuition fee reimbursement fixed by APHERMC, credited quarterly to avoid student fee burden.",
+        "payment_frequency": "Quarterly directly credited"
+      },
+      "eligibility": [
+        "Applicant must be a permanent resident/domicile of Andhra Pradesh.",
+        "Must be admitted to a recognized ITI, Polytechnic, Degree, B.Tech/Engineering, or Professional course through convener quota (EAPCET/ICET).",
+        "Total family annual income must not exceed \u20b92,50,000 (verified via MeeSeva Integrated Certificate).",
+        "Mandatory minimum 75% college attendance required for quarterly disbursement.",
+        "Candidate's family must not own a four-wheeler (excluding taxi/auto) or exceed land ceilings (10 acres wetland / 25 acres dryland)."
+      ],
+      "how_to_apply": [
+        "Ensure college admission details are uploaded on the JnanaBhumi portal by the college nodal officer.",
+        "Complete biometric/e-KYC authentication at the college or Grama/Ward Sachivalayam.",
+        "Link MeeSeva Integrated Caste and Income Certificate with the application on JnanaBhumi.",
+        "Quarterly verification by Welfare and Education Assistant (WEA) at Sachivalayam."
+      ],
+      "documents_commonly_needed": [
+        "Aadhaar Card (Applicant & Mother/Guardian)",
+        "MeeSeva Integrated Caste & Income Certificate (< \u20b92,50,000)",
+        "Class 10th (SSC) & Class 12th / Intermediate Marksheets",
+        "College Admission Allotment Order & Fee Receipt",
+        "Mother's Bank Passbook (NPCI Aadhaar-seeded for DBT)",
+        "Rice Card / Ration Card"
+      ],
+      "application_status_as_of": "Active for Academic Year 2026-27 on JnanaBhumi portal.",
+      "official_application_url": "https://jnanabhumi.ap.gov.in/",
+      "official_source_urls": [
+        "https://jnanabhumi.ap.gov.in/",
+        "https://ap.meeseva.gov.in/"
+      ],
+      "verification_notes": "Official Andhra Pradesh State Government welfare portal for post-matric higher education fee reimbursement."
+    },
+    {
+      "id": "AP-EDU-002",
+      "category": "education_scholarship",
+      "name": "Jagananna Vasathi Deevena (MTF - Hostel & Food Maintenance Allowance)",
+      "government_level": "State (Andhra Pradesh)",
+      "administering_authority": "Social Welfare & Backward Classes Welfare Dept, Government of Andhra Pradesh",
+      "purpose": "Provides annual financial assistance to cover food, hostel, and boarding expenses for students pursuing higher education.",
+      "benefits": {
+        "amount": "\u20b920,000 per year for B.Tech/Degree students (\u20b915,000 for Polytechnic, \u20b910,000 for ITI)",
+        "summary": "\u20b920,000 per annum for B.Tech/Degree students, credited in two equal installments directly to the mother's Aadhaar-seeded bank account.",
+        "payment_frequency": "Bi-annual installments"
+      },
+      "eligibility": [
+        "Domicile of Andhra Pradesh pursuing post-intermediate higher education (Degree, B.Tech, PG).",
+        "Total family annual income must not exceed \u20b92,50,000.",
+        "Student must be actively pursuing ITI, Polytechnic, Degree, B.Tech, or Professional course.",
+        "Mother of the student must possess an active Aadhaar-seeded bank account for DBT transfer."
+      ],
+      "how_to_apply": [
+        "Integrated application linked with Jagananna Vidya Deevena on JnanaBhumi portal.",
+        "College nodal officer verifies attendance and bonafide status.",
+        "DBT disbursement released directly to student mother's bank account."
+      ],
+      "documents_commonly_needed": [
+        "Aadhaar Card of student and mother",
+        "Mother's Aadhaar-seeded Bank Account Passbook",
+        "MeeSeva Income Certificate (< \u20b92.5 Lakhs)",
+        "College Bonafide and Hostel/Day-Scholar Certificate",
+        "Ration Card / Rice Card"
+      ],
+      "application_status_as_of": "Active on JnanaBhumi portal for 2026-27.",
+      "official_application_url": "https://jnanabhumi.ap.gov.in/",
+      "official_source_urls": [
+        "https://jnanabhumi.ap.gov.in/"
+      ],
+      "verification_notes": "State scheme providing maintenance allowances to prevent student dropouts."
+    },
+    {
+      "id": "KA-EDU-001",
+      "category": "education_scholarship",
+      "name": "Karnataka State Scholarship Portal (SSP) Post-Matric Scholarship",
+      "government_level": "State (Karnataka)",
+      "administering_authority": "Centre for e-Governance, Government of Karnataka",
+      "purpose": "Consolidated state scholarship portal providing fee reimbursement, maintenance allowances, and hostel fee concessions for Karnataka students.",
+      "benefits": {
+        "amount": "100% Tuition Fee Waiver + Maintenance Allowance (\u20b910,000 - \u20b925,000/yr)",
+        "summary": "Full or partial tuition fee waiver and monthly maintenance allowance credited through Aadhaar NPCI DBT.",
+        "payment_frequency": "Annual DBT credit"
+      },
+      "eligibility": [
+        "Permanent resident / domicile of Karnataka state.",
+        "Pursuing post-matric courses (PUC, Diploma, ITI, Degree, Engineering, Medicine, Postgraduation).",
+        "Family income ceiling: SC/ST up to \u20b92,50,000; Cat-1 up to \u20b92,50,000; 2A, 2B, 3A, 3B up to \u20b91,00,000.",
+        "Must possess valid 15-digit Nadakacheri RD number for Caste & Income certificates."
+      ],
+      "how_to_apply": [
+        "Register for SSP Student ID on https://ssp.postmatric.karnataka.gov.in/.",
+        "Link Aadhaar with NPCI seeding at bank branch.",
+        "Enter Nadakacheri RD numbers for automated digital certificate verification.",
+        "Submit college admission number and verify e-Attestation through college nodal officer."
+      ],
+      "documents_commonly_needed": [
+        "Aadhaar Number",
+        "Nadakacheri Caste & Income Certificate RD Numbers",
+        "College Registration / Admission Number",
+        "SSLC / Class 10 Registration Number",
+        "Aadhaar-seeded Bank Account"
+      ],
+      "application_status_as_of": "Open for 2026-27 academic cycle.",
+      "official_application_url": "https://ssp.postmatric.karnataka.gov.in/",
+      "official_source_urls": [
+        "https://ssp.postmatric.karnataka.gov.in/"
+      ],
+      "verification_notes": "Karnataka state single-window scholarship portal."
+    }
+  ]
+}
