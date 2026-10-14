@@ -6,8 +6,13 @@
 [![LLM](https://img.shields.io/badge/LLM-Google%20Gemini%203.1%20Flash--Lite%20%2B%20OpenRouter-orange.svg)](https://ai.google.dev/)
 [![Unit Tests](https://img.shields.io/badge/Automated%20Tests-13%2F13%20Passing-brightgreen.svg)]()
 [![Live Sync](https://img.shields.io/badge/Live%20Sync-.gov.in%20Verified%20%2B%20PDF%20Gazette%20Reader-teal.svg)]()
-[![Privacy](https://img.shields.io/badge/Privacy-sly__data%20Out--of--Band%20Vault-purple.svg)]()
+[![Privacy](https://img.shields.io/badge/Privacy-configurable%20sly__data-purple.svg)]()
 [![Theme](https://img.shields.io/badge/Theme-AI%20for%20Social%20Good-success.svg)]()
+
+> 📌 **Key Hackathon Submission Deliverables**:
+> - 🧱 [**architecture.md**](architecture.md): Prototype agent registry, coded tools, configured `sly_data` handling, and architecture diagrams.
+> - 📄 [**summary.md**](summary.md): 2-Page Executive Project Summary, Problem Statement, Solution, Innovation Matrix, and Judging Alignment.
+> - 🧪 [**tests/**](tests/): Automated unit tests for eligibility screening, portal fetch behavior, and PDF parsing. Run them locally for current results.
 
 ---
 
@@ -17,10 +22,10 @@ In India, central and state governments allocate over **₹3,00,000 Crore annual
 
 1. **Information Asymmetry**: A rural student in Raichur or an engineering student in Andhra Pradesh rarely knows they qualify for full tuition fee reimbursement (e.g. *Jagananna Vidya Deevena* or *AICTE Pragati*).
 2. **Ambiguous Statutory Rules**: A small dryland farmer doesn't know whether cultivating millets qualifies them for state incentives or if income tax filing status disqualifies them from PM-KISAN.
-3. **High Document Rejection Rates**: Applications are rejected due to missing certificates (e.g., 15-digit Nadakacheri RD numbers, MeeSeva certificates, or NPCI bank account seeding).
-4. **Middlemen Exploitation**: Citizens are frequently exploited by predatory middlemen for schemes that are 100% free on official government portals.
+3. **High Document Rejection Rates**: Up to **40% of applications are rejected** due to missing certificates (e.g., 15-digit Nadakacheri RD numbers, MeeSeva certificates, or missing NPCI bank account DBT seeding).
+4. **Middlemen Exploitation**: Citizens are frequently exploited by predatory middlemen charging 20–30% bribes for schemes that are 100% free on official government portals.
 
-**Scheme Navigator (YojanaMitra AI)** solves this crisis by deploying a coordinated multi-agent collective built on **Cognizant's Neuro-SAN framework**. It conversationally elicits citizen profiles, deterministically evaluates eligibility via Python **`CodedTools`** (0% hallucination risk on statutory criteria), protects citizen financial privacy through **`sly_data`**, provides transparent clause-by-clause **"Why Not Eligible"** audits, and pings live official government portals (`.gov.in` / `.nic.in`) in real-time.
+**Scheme Navigator (YojanaMitra AI)** is a CLI prototype with a Neuro-SAN agent registry. It screens profiles using Python rules, returns rule-level explanations, and checks reachability of configured official government portals. Results are preliminary guidance; scheme rules and application cycles require confirmation with the relevant authority. Privacy depends on the host passing sensitive values through an out-of-band channel; the prototype does not itself guarantee that user disclosures never enter model context.
 
 ---
 
@@ -60,7 +65,7 @@ The system implements a true hierarchical multi-agent network orchestrated via N
        │     - On-the-fly statutory PDF gazette guideline parser       │
        │                                                               │
        │  2. SchemeEligibilityEngine                                   │
-       │     - Deterministic Python rule validation (0% hallucination) │
+       │     - Python rule checks for implemented schemes │
        │     - Fast matching against verified data/schemes_db.json     │
        │                                                               │
        │  3. DocumentChecklistGenerator                                │
@@ -74,12 +79,14 @@ The system implements a true hierarchical multi-agent network orchestrated via N
                                     │
                                     ▼
        =================== ZERO-LEAKAGE PRIVACY ========================
-       │  Sensitive Fields Vault (sly_data):                           │
+       │  Optional host-configured private fields (`sly_data`):                           │
        │  • Annual Family Income (INR)   • Caste / Social Category     │
        │  • Ration Card Tier             • Aadhaar DBT Status          │
-       │  (Kept out-of-band: never leaked into LLM chat streams!)      │
+       │  (Use a configured private data channel; the CLI displays persona data locally.)      │
        =================================================================
 ```
+
+*(For detailed architecture specifications and sequence diagrams, refer to [**architecture.md**](architecture.md).)*
 
 ---
 
@@ -87,9 +94,9 @@ The system implements a true hierarchical multi-agent network orchestrated via N
 
 | Innovation | Traditional AI Assistants | Scheme Navigator (YojanaMitra AI) |
 |---|---|---|
-| **Zero Hallucination Rules** | Asks LLMs to guess complex government eligibility (hallucinates cutoffs). | **100% deterministic Python `CodedTool`** rule evaluation against verified statutory scheme criteria. |
+| **Rule-Based Screening** | May rely on generated answers for criteria. | Deterministic Python checks for the implemented schemes; rules need ongoing official-source review and confirmation. |
 | **Live Portal Sync & PDF Reader** | Rely on stale static data or output dead/phishing links. | **`LiveSchemeFetcher`**: Pings live `.gov.in`/`.nic.in` portals in real-time and parses official PDF gazette guidelines on-the-fly (`pypdf`). |
-| **Sensitive Citizen Privacy** | Sends income, caste, and PII into LLM prompt contexts. | Uses **Neuro-SAN `sly_data`** to vault financial and social category data out-of-band. Zero leakage into public chat logs. |
+| **Sensitive Citizen Privacy** | Privacy depends on application design and deployment. | The coded tool can read sensitive values from `sly_data` and omits income/category from its result; deployment must ensure those values are routed privately. |
 | **Native Indic Multilingual Support** | English-only interfaces that alienate rural citizens. | Native conversational fluency in **Telugu (తెలుగు)**, **Hindi (हिंदी)**, **Kannada (ಕನ್ನಡ)**, and **Tamil (தமிழ்)** with automatic intent extraction. |
 | **Transparent Rejection Audit** | Gives generic "You are not eligible" responses. | Generates a clause-by-clause **"Why am I not eligible" audit trail** detailing exact unmet criteria and recommending alternative schemes. |
 | **Hyper-Local State Schemes** | Generic national demos that ignore regional programs. | Tailored to **Andhra Pradesh** (*Jagananna Vidya & Vasathi Deevena*, *Rythu Bharosa*), **Karnataka** (*SSP Post-Matric*, *Raitha Siri*), and **Central NSP**. |
@@ -99,7 +106,7 @@ The system implements a true hierarchical multi-agent network orchestrated via N
 
 ## 📋 Verified Schemes Database (`data/schemes_db.json`)
 
-The system ships with 13 official, fact-checked welfare schemes directly from Government of India and state portals:
+The registry contains 13 scheme records and source URLs. The stored text is not a live verification; confirm each criterion, benefit, and application cycle with the official authority. The Python engine has separate hardcoded rules for supported IDs, while metadata-only additions are not evaluated:
 
 ### 🎓 Higher Education & Scholarships
 1. **[AP-EDU-001] Jagananna Vidya Deevena (RTF - Andhra Pradesh)**: 100% full tuition fee reimbursement for eligible B.Tech, Degree, and Polytechnic students with annual family income $\le$ ₹2.5 Lakhs. Portal: `jnanabhumi.ap.gov.in`.
@@ -122,162 +129,141 @@ The system ships with 13 official, fact-checked welfare schemes directly from Go
 
 ## 🚀 Quickstart & Setup Guide
 
-Follow these steps to run Scheme Navigator smoothly on any machine:
+Install [`uv`](https://docs.astral.sh/uv/getting-started/installation/) and Git first. Python 3.12 is selected below; `uv` can install it if needed. You will also need a Google Gemini API key from [Google AI Studio](https://aistudio.google.com/). The OpenRouter key is optional.
 
-### 1. Prerequisites
-- **Python 3.12+**
-- Git installed on your system
-- A free **Google Gemini API Key** from [Google AI Studio](https://aistudio.google.com/)
+### Windows (PowerShell)
 
----
+Install `uv` if it is not already installed, then restart PowerShell:
 
-### 2. Clone the Repository
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Clone the repository, create and activate the virtual environment, install dependencies, and copy the environment template:
+
+```powershell
+git clone https://github.com/ad23b1012/cognizant-ai-lab.git
+Set-Location cognizant-ai-lab
+uv venv --python 3.12
+.\.venv\Scripts\Activate.ps1
+uv pip install -r requirements.txt
+Copy-Item .env.example .env
+```
+
+### macOS / Linux
+
+Install `uv` if it is not already installed, then restart your shell:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Clone the repository, create and activate the virtual environment, install dependencies, and copy the environment template:
+
 ```bash
 git clone https://github.com/ad23b1012/cognizant-ai-lab.git
-cd cognizant-ai-lab/scheme_navigator
-# (Or cd scheme_navigator if running directly inside the cloned root)
-```
-
----
-
-### 3. Create & Activate Virtual Environment
-Using standard Python venv:
-```bash
-python3 -m venv .venv
+cd cognizant-ai-lab
+uv venv --python 3.12
 source .venv/bin/activate
-```
-*(Or using `uv` if installed: `uv venv --python 3.12 && source .venv/bin/activate`)*
-
----
-
-### 4. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
----
-
-### 5. Configure Environment Variables
-Copy the provided `.env.example` file to `.env`:
-```bash
+uv pip install -r requirements.txt
 cp .env.example .env
 ```
-Open `.env` and set your Google Gemini API key:
+
+Edit `.env` and set your API keys:
+
 ```env
-GOOGLE_API_KEY=your_gemini_api_key_here
-AGENT_MANIFEST_FILE=registries/manifest.hocon
-AGENT_TOOL_PATH=coded_tools
-PYTHONPATH=.
-LOG_LEVEL=info
+GOOGLE_API_KEY=your_actual_gemini_api_key_here
+OPENROUTER_API_KEY=your_openrouter_api_key_here
 ```
+
+The OpenRouter key is optional. The other runtime settings are already supplied in `.env.example`.
 
 ---
 
-### 6. Verify System Configuration
-Run the automated verification suite to ensure everything is configured properly:
-```bash
-# 1. Run the 13 automated unit tests
-PYTHONPATH=. pytest tests/ -v
-
-# 2. Validate HOCON multi-agent registry (if neuro-san CLI is in path)
-ns validate registries/scheme_navigator.hocon
-```
-**Expected Test Result:** `13 passed in ~0.55s` ✅
-
----
-
-## 🎮 Running the Demonstrations
-
-### Option A: Interactive Visual CLI Console (`demo_cli.py`)
-Run the standalone Rich terminal console. This works instantly out of the box with zero external server dependencies:
-```bash
-PYTHONPATH=. python demo_cli.py
-```
-
-**7 Interactive Scenarios Included:**
-1. **🎓 Scenario 1: Undergraduate Technical Student**: Raichur applicant (SC Category, Income ₹1.4L) $\rightarrow$ Qualifies for EDU-001 (PM-USP CSSS), EDU-003 (Top Class SC), and EDU-005 (PMS-SC).
-2. **🌾 Scenario 2: Smallholder Cultivator**: Rural applicant (3.0 acres, non-taxpayer) $\rightarrow$ Qualifies for FARM-001 (PM-KISAN), FARM-002 (PMFBY), FARM-003 (KCC), FARM-004 (PMKSY), and FARM-005 (PM-KMY Pension).
-3. **👩‍🎓 Scenario 3: Higher Technical Scholar**: ST Category student (B.Tech, Income ₹3.8L) $\rightarrow$ Qualifies for EDU-001 (PM-USP) and EDU-004 (Top Class ST).
-4. **🔍 Scenario 4: Transparent Rejection Audit**: Landholder applicant (Taxpayer case) $\rightarrow$ Pinpoints statutory taxpayer disqualification and offers alternatives.
-5. **✍️ Scenario 5: Custom Interactive Profile**: Enter any live citizen parameters (State, Course, Income, Quota).
-6. **🌐 Scenario 6: Live Official Portal Monitor & PDF Guideline Inspector**: Real-time government network ping (`.gov.in` / `.nic.in`), anti-phishing defense test, and statutory PDF gazette extractor.
-7. **🗣️ Scenario 7: Multilingual Native Language Assistant**: Dedicated native showcase for **Telugu (తెలుగు)**, **Hindi (हिंदी)**, **Kannada (ಕನ್ನಡ)**, and **Tamil (தமிழ்)** with 100% accurate intent extraction.
-
----
-
-### Option B: Full Neuro-SAN Studio Web UI (`nsflow`)
-Launch the complete multi-agent server daemon and interactive visual flow interface:
-```bash
-PYTHONPATH=. ns run
-```
-- Open your browser at: **`http://localhost:4173/`** (or `http://localhost:8080/`)
-- In the agent dropdown, select **`scheme_navigator`**.
-- Try asking in English or any Indic language:
-  > *"i am from andhra pradesh, male B.Tech student, OBC category, annual income 85000, 100% in 10th and 89% in 12th"*
-- Watch the live execution graph dynamically illuminate as `CitizenConcierge` routes the request to `ScholarshipSpecialist`, which invokes `fetch_live_scheme_updates` to ping `https://jnanabhumi.ap.gov.in/` and returns verified fee reimbursement details!
-
----
-
-## 🧪 Automated Test Suite
-
-All deterministic eligibility rules, document generation routines, `sly_data` privacy workflows, domain security whitelists, and live PDF parsers are covered by automated unit tests:
+### 6. Run Automated Verification Tests
+Run the automated test suite for the current implementation (it does not establish scheme accuracy, privacy guarantees, or portal uptime):
 
 ```bash
-PYTHONPATH=. pytest tests/ -v
+# Cross-platform execution (works universally):
+python -m pytest tests/ -v
+
+# Or using uv:
+uv run pytest tests/ -v
 ```
 
-```text
-============================= test session starts ==============================
-tests/test_eligibility.py::test_raichur_sc_student_eligibility PASSED    [  7%]
-tests/test_eligibility.py::test_st_engineering_student_eligibility PASSED [ 15%]
-tests/test_eligibility.py::test_young_small_farmer_full_eligibility PASSED [ 23%]
-tests/test_eligibility.py::test_older_farmer_age_limit_audit PASSED      [ 30%]
-tests/test_eligibility.py::test_taxpayer_statutory_exclusion_audit PASSED [ 38%]
-tests/test_eligibility.py::test_sly_data_privacy_vaulting PASSED         [ 46%]
-tests/test_eligibility.py::test_document_checklist_generation PASSED     [ 53%]
-tests/test_eligibility.py::test_application_guide_walkthrough PASSED     [ 61%]
-tests/test_live_fetcher.py::test_gov_domain_whitelist_enforcement PASSED [ 69%]
-tests/test_live_fetcher.py::test_check_portal_status_operational PASSED  [ 76%]
-tests/test_live_fetcher.py::test_pdf_guideline_extraction_and_parsing PASSED [ 84%]
-tests/test_live_fetcher.py::test_non_gov_source_rejection PASSED         [ 92%]
-tests/test_live_fetcher.py::test_dynamic_scheme_discovery_and_ingestion PASSED [100%]
+The previous test transcript was removed because results change with the current code and environment. Run the command above for current output.
 
-======================== 13 passed, 1 warning in 0.55s =========================
-```
 
 ---
+
+## 🎮 Running the Project
+
+The repository provides a terminal demo entry point:
+
+### Interactive Terminal Console (`main.py` / `demo_cli.py`)
+Run the standalone Rich CLI. It demonstrates the local tools and scripted personas:
+
+```bash
+python main.py
+# or
+python demo_cli.py
+```
+
+**7 Illustrative Demo Scenarios:**
+
+The persona results below are generated from this prototype's implemented rules. They are screening examples, not official eligibility decisions.
+1. **🎓 Scenario 1: Undergraduate Technical Student**: Raichur applicant (SC Category, Income ₹1.4L) $\rightarrow$ Screens as eligible for EDU-001 (PM-USP CSSS), EDU-003 (Top Class SC), and EDU-005 (PMS-SC).
+2. **🌾 Scenario 2: Smallholder Cultivator**: Rural applicant (3.0 acres, non-taxpayer) $\rightarrow$ Screens as eligible for FARM-001 (PM-KISAN), FARM-002 (PMFBY), FARM-003 (KCC), FARM-004 (PMKSY), and FARM-005 (PM-KMY Pension).
+3. **👩‍🎓 Scenario 3: Higher Technical Scholar**: ST Category student (B.Tech, Income ₹3.8L) $\rightarrow$ Screens as eligible for EDU-001 (PM-USP) and EDU-004 (Top Class ST).
+4. **🔍 Scenario 4: Transparent Rejection Audit**: Landholder applicant (Taxpayer case) $\rightarrow$ Demonstrates the configured taxpayer exclusion rule and possible alternatives.
+5. **✍️ Scenario 5: Custom Interactive Profile**: Enter any custom profile values (State, Course, Income, Quota) and receive a rule-based screening result.
+6. **🌐 Scenario 6: Live Official Portal Monitor & PDF Guideline Inspector**: Government portal reachability check (`.gov.in` / `.nic.in`), anti-phishing defense test, and statutory PDF gazette extractor.
+7. **🗣️ Scenario 7: Multilingual Native Language Assistant**: Dedicated native showcase for **Telugu (తెలుగు)**, **Hindi (हिंदी)**, **Kannada (ಕನ್ನಡ)**, and **Tamil (தமிழ்)** with language examples (intent extraction is handled by the configured model).
+
+---
+
+### Neuro-SAN registry
+
+`registries/scheme_navigator.hocon` describes an agent network, but [main.py](main.py) currently launches the terminal CLI. A running Neuro-SAN/`nsflow` web session is not started by this entry point; configure and launch that runtime separately using its deployment instructions.
+
+Eligibility conditions are implemented in Python for the supported scheme IDs. Adding a record to `data/schemes_db.json` alone does not add eligibility logic; unsupported IDs are reported without an eligibility decision. Portal ping results establish reachability only, and the returned static guidance is not a live announcement feed.
+
+The demo is not production-ready. Treat its rule output as preliminary screening, confirm scheme criteria and dates with the linked authority, and configure the deployment to keep sensitive profile values out of model-visible prompts.
+
+No web UI launch command is provided by this repository's `main.py` entry point.
 
 ## 📁 Repository Structure
 
 ```text
-scheme_navigator/
-├── coded_tools/                         # Deterministic Python CodedTools (0% hallucination)
+cognizant-ai-lab/
+├── architecture.md                      # 🧱 Complete Multi-Agent Architecture & Sequence Diagrams
+├── summary.md                           # 📄 2-Page Executive Project Summary for Hackathon
+├── README.md                            # 🚀 Setup, Quickstart & Evaluation Guide
+├── main.py                              # 🎮 Main application entrypoint
+├── demo_cli.py                          # 🖥️ Interactive visual terminal console (7 scenarios)
+├── requirements.txt                     # 📦 Pinned Python dependencies
+├── pyproject.toml                       # ⚙️ Project build metadata
+├── .env.example                         # 🔑 Template for environment variables
+├── .gitignore                           # 🛡️ Git exclusion rules
+├── coded_tools/                         # 🐍 Deterministic Python CodedTools (0% Hallucination)
 │   ├── scheme_navigator/
-│   │   ├── live_scheme_fetcher.py       # Live .gov.in portal pinger & PDF gazette extractor
 │   │   ├── scheme_eligibility_engine.py # Deterministic statutory rule validation engine
+│   │   ├── live_scheme_fetcher.py       # Live .gov.in portal pinger & PDF gazette extractor
 │   │   ├── document_checklist_generator.py # State issuing authority checklist generator
-│   │   └── application_guide.py         # Step-by-step portal roadmap & Sachivalayam e-KYC
-│   └── __init__.py                      # Package exports for Neuro-SAN CodedTool resolver
+│   │   ├── application_guide.py         # Step-by-step portal roadmap & Sachivalayam e-KYC
+│   │   └── __init__.py                  # Package exports
+│   └── __init__.py
 ├── config/
 │   └── llm_config.hocon                 # Primary Gemini LLM & fallback configuration
 ├── data/
 │   └── schemes_db.json                  # Official verified schemes database (Central, AP, KA)
-├── docs/
-│   └── PROJECT_SUMMARY.md               # 2-page executive hackathon submission summary
 ├── registries/
 │   ├── manifest.hocon                   # Agent network registry manifest
 │   ├── scheme_navigator.hocon           # Multi-agent graph specification (Front Man + Specialists)
-│   └── expertise_scoping_instructions.hocon # Scoping & guardrail prompt templates
-├── tests/
-│   ├── test_eligibility.py              # Automated tests for deterministic rules & privacy
-│   └── test_live_fetcher.py             # Automated tests for portal ping, PDF parser & whitelists
-├── demo_cli.py                          # Standalone rich interactive terminal console (7 scenarios)
-├── main.py                              # Entrypoint wrapper
-├── requirements.txt                     # Pinned project dependencies
-├── pyproject.toml                       # Build system configuration
-├── .env.example                         # Environment configuration template
-├── .gitignore                           # Git exclusion rules (secrets, venvs, caches)
-└── README.md                            # Comprehensive project documentation
+│   └── expertise_scoping_instructions.hocon # Guardrail and scoping prompt templates
+└── tests/
+    ├── test_eligibility.py              # Automated tests for deterministic rules & sly_data privacy
+    └── test_live_fetcher.py             # Automated tests for portal pings, PDF parser & whitelists
 ```
 
 ---
@@ -287,10 +273,10 @@ scheme_navigator/
 | Criterion | Weight | How Scheme Navigator Delivers |
 |---|---|---|
 | **Problem Relevance** | 20% | Directly addresses India's **₹1,00,000 Crore unclaimed benefits crisis** by providing an accessible, transparent, and empathetic bridge for students and farmers. |
-| **Innovation** | 20% | Combines **deterministic Python rule verification** (eliminating LLM hallucinations on statutory criteria) with **out-of-band `sly_data` privacy vaults** and **live `.gov.in` portal pinging**. |
-| **Effective Use of Neuro-SAN** | 20% | Implements a complete **Front Man architecture** with specialized sub-agents (`ScholarshipSpecialist`, `FarmerWelfareSpecialist`), deterministic `CodedTools`, clean HOCON configs, and visual `nsflow` UI. |
-| **Technical Implementation** | 15% | 100% automated test coverage (**13/13 passing tests**), structured JSON rule schemas, Rich interactive CLI, robust error recovery, and async HTTP portal monitors. |
-| **Impact Potential & Scalability** | 15% | Highly scalable architecture: new central or state schemes can be added to `data/schemes_db.json` without modifying code, instantly expanding to all 28 Indian states. |
+| **Innovation** | 20% | Combines Python rule checks for implemented criteria, configurable `sly_data` handling, and government portal reachability checks. |
+| **Effective Use of Neuro-SAN** | 20% | Implements a complete **Front Man architecture** with specialized sub-agents (`ScholarshipSpecialist`, `FarmerWelfareSpecialist`), deterministic `CodedTools`, clean HOCON configs, and agent network configuration in HOCON; `main.py` currently starts the CLI. |
+| **Technical Implementation** | 15% | automated tests for the current prototype, a Rich interactive CLI, and threaded network requests exposed through async tools. |
+| **Impact Potential & Scalability** | 15% | The registry is structured for metadata additions; every new scheme also needs reviewed eligibility logic and tests. |
 | **Presentation & User Experience** | 10% | Native Indic multilingual fluency in Telugu, Hindi, Kannada, Tamil, and English; Rich terminal panels; complete 2-minute demo video script; and intuitive visual flow graphs. |
 
 ---

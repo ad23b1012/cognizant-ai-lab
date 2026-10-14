@@ -6,6 +6,7 @@ from logging import Logger, getLogger
 import json
 import os
 from pathlib import Path
+import math
 from typing import Any, Dict, List, Optional, Union
 
 from neuro_san.interfaces.coded_tool import CodedTool
@@ -15,7 +16,7 @@ class SchemeEligibilityEngine(CodedTool):
     """
     Evaluates citizen profiles against official government rules deterministically.
     Sensitive citizen data (income, social category, landholdings) is accepted either
-    via public args or out-of-band via sly_data for zero-leakage privacy.
+    via public args or out-of-band via sly_data; deployments must enforce the privacy boundary.
     """
 
     def __init__(self, **kwargs: Any) -> None:
@@ -64,14 +65,28 @@ class SchemeEligibilityEngine(CodedTool):
         """
         tool_name = self.__class__.__name__
         logger: Logger = getLogger(tool_name)
-        logger.info("Executing %s with args: %s, sly_data keys: %s", tool_name, list(args.keys()), list(sly_data.keys()))
-
-        profile = self._build_effective_profile(args, sly_data)
+        # Never log profile values or even sensitive field names. Tool arguments may
+        # contain citizen information even when the caller did not use sly_data.
+        logger.info("Executing %s", tool_name)
+        try:
+            profile, missing_profile_fields = self._build_effective_profile(args, sly_data)
+        except ValueError as exc:
+            return {"status": "INVALID_INPUT", "message": str(exc)}
         requested_domain = str(args.get("domain", "all")).lower().strip()
         requested_scheme_id = args.get("scheme_id")
 
+        domain_aliases = {"scholarship": "education", "farmer": "agriculture"}
+        requested_domain = domain_aliases.get(requested_domain, requested_domain)
+        if requested_domain not in {"all", "education", "agriculture"}:
+            return {"status": "INVALID_INPUT", "message": f"Unsupported domain: {requested_domain}. Use all, education, or agriculture."}
+        known_ids = {s.get("id") for s in self._schemes}
+        if requested_scheme_id and requested_scheme_id not in known_ids:
+            return {"status": "NOT_FOUND", "message": f"Unknown scheme_id: {requested_scheme_id}"}
+
         eligible_schemes = []
         ineligible_schemes = []
+        needs_information = []
+        unsupported_schemes = []
 
         for scheme in self._schemes:
             sid = scheme.get("id")
@@ -83,10 +98,19 @@ class SchemeEligibilityEngine(CodedTool):
 
             # Domain filter check
             if requested_domain != "all":
-                if requested_domain in ("education", "scholarship") and "education" not in category:
+                if requested_domain == "education" and "education" not in category:
                     continue
-                if requested_domain in ("agriculture", "farmer") and "farmer" not in category and "agri" not in category:
+                if requested_domain == "agriculture" and "farmer" not in category and "agri" not in category:
                     continue
+
+            if sid not in self._supported_scheme_ids():
+                unsupported_schemes.append({"scheme_id": sid, "scheme_name": scheme.get("name"), "status": "RULES_NOT_IMPLEMENTED"})
+                continue
+            required = self._required_fields(sid)
+            missing = [name for name in required if profile.get(name) is None]
+            if missing:
+                needs_information.append({"scheme_id": sid, "scheme_name": scheme.get("name"), "status": "NEEDS_INFORMATION", "missing_fields": missing})
+                continue
 
             evaluation = self._evaluate_scheme(scheme, profile)
             if evaluation["is_eligible"]:
@@ -95,67 +119,111 @@ class SchemeEligibilityEngine(CodedTool):
                 ineligible_schemes.append(evaluation)
 
         result = {
-            "status": "SUCCESS",
+            "status": "NEEDS_INFORMATION" if needs_information and not eligible_schemes and not ineligible_schemes else "SUCCESS",
             "citizen_summary": {
-                "state": profile.get("state", "Not specified").title(),
-                "occupation": profile.get("occupation", "Not specified").title(),
-                "age": profile.get("age"),
-                "gender": profile.get("gender", "Not specified").title(),
-                "annual_income_inr": f"₹{profile.get('annual_income_inr', 0):,}",
-                "social_category": profile.get("social_category", "General"),
-                "land_acres": profile.get("land_acres", 0.0),
-                "is_taxpayer": profile.get("is_taxpayer", False),
-                "privacy_mode": "sly_data protected" if ("annual_income_inr" in sly_data or "social_category" in sly_data) else "standard"
+                "state": (profile.get("state") or "Not specified").replace("_", " ").title(),
+                "occupation": (profile.get("occupation") or "Not specified").title(),
+                "privacy_mode": (
+                    "sly_data supplied" if ("annual_income_inr" in sly_data or "social_category" in sly_data)
+                    else "sensitive fields supplied in args" if any(k in args for k in ("annual_income_inr", "income", "social_category", "category", "caste"))
+                    else "no sensitive values supplied"
+                )
             },
-            "total_schemes_checked": len(eligible_schemes) + len(ineligible_schemes),
+            "total_schemes_checked": len(eligible_schemes) + len(ineligible_schemes) + len(needs_information) + len(unsupported_schemes),
+            "schemes_evaluated": len(eligible_schemes) + len(ineligible_schemes),
             "eligible_count": len(eligible_schemes),
             "ineligible_count": len(ineligible_schemes),
             "eligible_schemes": eligible_schemes,
             "ineligible_schemes": ineligible_schemes,
-            "guidance_note": "Evaluated against verified Central & State operational guidelines. Check live portal for application cycles and document submission dates."
+            "needs_information": needs_information,
+            "unsupported_schemes": unsupported_schemes,
+            "missing_profile_fields": missing_profile_fields,
+            "guidance_note": "Rule-based screening only. Confirm current criteria and application dates with the official scheme authority."
         }
-
-        sly_data["last_eligibility_run"] = result["eligible_count"]
         return result
 
-    def _build_effective_profile(self, args: Dict[str, Any], sly_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Merges public args with sensitive sly_data."""
+    @staticmethod
+    def _supported_scheme_ids():
+        return {"EDU-001", "EDU-002", "EDU-003", "EDU-004", "EDU-005", "AP-EDU-001", "AP-EDU-002", "KA-EDU-001", "FARM-001", "FARM-002", "FARM-003", "FARM-004", "FARM-005"}
+
+    @staticmethod
+    def _required_fields(scheme_id: str) -> List[str]:
+        requirements = {
+            "EDU-001": ["occupation", "annual_income_inr", "class12_percentile"],
+            "EDU-002": ["occupation", "annual_income_inr", "education_level"],
+            "EDU-003": ["occupation", "annual_income_inr", "social_category"],
+            "EDU-004": ["occupation", "annual_income_inr", "social_category"],
+            "EDU-005": ["occupation", "annual_income_inr", "social_category"],
+            "AP-EDU-001": ["occupation", "annual_income_inr", "state", "education_level"],
+            "AP-EDU-002": ["occupation", "annual_income_inr", "state", "education_level"],
+            "KA-EDU-001": ["occupation", "annual_income_inr", "state", "social_category"],
+            "FARM-001": ["occupation", "land_acres", "is_taxpayer"],
+            "FARM-002": ["occupation", "land_acres"],
+            "FARM-003": ["occupation", "land_acres"],
+            "FARM-004": ["occupation", "land_acres"],
+            "FARM-005": ["occupation", "land_acres", "age", "is_taxpayer"],
+        }
+        return requirements.get(scheme_id, [])
+
+    def _build_effective_profile(self, args: Dict[str, Any], sly_data: Dict[str, Any]):
+        """Merge public and private inputs; preserve missing values as unknown."""
+        def number(value, name, *, integer=False):
+            if value is None or value == "":
+                return None
+            if isinstance(value, bool):
+                raise ValueError(f"{name} must be a number, not a boolean.")
+            try:
+                parsed_number = float(value)
+            except (ValueError, TypeError, OverflowError):
+                raise ValueError(f"{name} must be a valid {'integer' if integer else 'number'}.")
+            if not math.isfinite(parsed_number) or parsed_number < 0:
+                raise ValueError(f"{name} must be a finite non-negative value.")
+            if integer and not parsed_number.is_integer():
+                raise ValueError(f"{name} must be a whole number.")
+            parsed = int(parsed_number) if integer else parsed_number
+            if integer and parsed > 130:
+                raise ValueError("age must be between 0 and 130.")
+            return parsed
+
+        def boolean(value, name):
+            if value is None or value == "":
+                return None
+            if isinstance(value, bool):
+                return value
+            if isinstance(value, int) and value in (0, 1):
+                return bool(value)
+            if isinstance(value, str) and value.strip().lower() in {"true", "yes", "1"}:
+                return True
+            if isinstance(value, str) and value.strip().lower() in {"false", "no", "0"}:
+                return False
+            raise ValueError(f"{name} must be true or false.")
+
         raw_income = sly_data.get("annual_income_inr")
         if raw_income is None:
-            raw_income = args.get("annual_income_inr", args.get("income", 0))
-        try:
-            annual_income = float(raw_income)
-        except (ValueError, TypeError):
-            annual_income = 0.0
-
-        raw_category = sly_data.get("social_category", args.get("category", args.get("caste", "General")))
-        raw_state = str(args.get("state", sly_data.get("state", "all"))).lower().strip().replace(" ", "_")
-
-        raw_land = args.get("land_acres", sly_data.get("land_acres", 0.0))
-        try:
-            land_acres = float(raw_land)
-        except (ValueError, TypeError):
-            land_acres = 0.0
-
-        raw_age = args.get("age", sly_data.get("age", 20))
-        try:
-            age = int(raw_age)
-        except (ValueError, TypeError):
-            age = 20
-
-        return {
-            "annual_income_inr": annual_income,
-            "social_category": str(raw_category).strip(),
-            "state": raw_state,
-            "occupation": str(args.get("occupation", "")).lower().strip(),
+            raw_income = args.get("annual_income_inr", args.get("income"))
+        raw_category = sly_data.get("social_category", args.get("category", args.get("caste")))
+        raw_state = args.get("state", sly_data.get("state"))
+        raw_land = args.get("land_acres", sly_data.get("land_acres"))
+        raw_age = args.get("age", sly_data.get("age"))
+        percentile = args.get("class12_percentile", args.get("percentile"))
+        occupation = args.get("occupation")
+        level = args.get("education_level")
+        profile = {
+            "annual_income_inr": number(raw_income, "annual_income_inr"),
+            "social_category": str(raw_category).strip().upper() if raw_category not in (None, "") else None,
+            "state": str(raw_state).lower().strip().replace(" ", "_") if raw_state not in (None, "") else None,
+            "occupation": str(occupation).lower().strip() if occupation not in (None, "") else None,
             "gender": str(args.get("gender", "")).lower().strip(),
-            "age": age,
-            "education_level": str(args.get("education_level", "")).lower().strip(),
-            "class12_percentile": float(args.get("class12_percentile", args.get("percentile", 85.0))),
-            "land_acres": land_acres,
-            "is_taxpayer": bool(args.get("is_taxpayer", sly_data.get("is_taxpayer", False))),
-            "has_bank_account": bool(args.get("has_bank_account", True)),
+            "age": number(raw_age, "age", integer=True),
+            "education_level": str(level).lower().strip() if level not in (None, "") else None,
+            "class12_percentile": number(percentile, "class12_percentile"),
+            "land_acres": number(raw_land, "land_acres"),
+            "is_taxpayer": boolean(args.get("is_taxpayer", sly_data.get("is_taxpayer")), "is_taxpayer"),
+            "has_bank_account": boolean(args.get("has_bank_account"), "has_bank_account"),
         }
+        if profile["class12_percentile"] is not None and profile["class12_percentile"] > 100:
+            raise ValueError("class12_percentile must be between 0 and 100.")
+        return profile, [key for key, value in profile.items() if value is None]
 
     def _evaluate_scheme(self, scheme: Dict[str, Any], profile: Dict[str, Any]) -> Dict[str, Any]:
         """Deterministically evaluates a scheme against citizen profile with full audit log."""
@@ -165,7 +233,9 @@ class SchemeEligibilityEngine(CodedTool):
 
         occupation = profile.get("occupation", "")
         income = profile.get("annual_income_inr", 0.0)
-        caste = profile.get("social_category", "General").upper()
+        caste = (profile.get("social_category") or "").upper().strip()
+        is_sc = caste in {"SC", "SCHEDULED CASTE", "SCHEDULED CASTES"}
+        is_st = caste in {"ST", "SCHEDULED TRIBE", "SCHEDULED TRIBES"}
         land_acres = profile.get("land_acres", 0.0)
         is_taxpayer = profile.get("is_taxpayer", False)
         age = profile.get("age", 20)
@@ -176,7 +246,7 @@ class SchemeEligibilityEngine(CodedTool):
         # 1. EDU-001: PM-USP Central Sector Scheme of Scholarship (CSSS)
         # -------------------------------------------------------------
         if sid == "EDU-001":
-            if occupation == "farmer":
+            if occupation != "student":
                 is_eligible = False
                 rules_log.append({"rule": "Target Group", "status": "FAIL", "reason": "Exclusive to higher education college/university students."})
             else:
@@ -185,9 +255,9 @@ class SchemeEligibilityEngine(CodedTool):
             # Income ceiling: ₹4.5 Lakhs
             if income > 450000:
                 is_eligible = False
-                rules_log.append({"rule": "Income Ceiling", "status": "FAIL", "reason": f"Family income ₹{income:,.0f} exceeds ₹4,50,000 ceiling (Exceeded by ₹{income - 450000:,.0f})."})
+                rules_log.append({"rule": "Income Ceiling", "status": "FAIL", "reason": "Family income exceeds the applicable income ceiling."})
             else:
-                rules_log.append({"rule": "Income Ceiling", "status": "PASS", "reason": f"Family income ₹{income:,.0f} <= ₹4,50,000 ceiling."})
+                rules_log.append({"rule": "Income Ceiling", "status": "PASS", "reason": "Family income meets the applicable income ceiling."})
 
             # Class XII merit percentile: >= 80th percentile
             if percentile < 80.0:
@@ -200,7 +270,7 @@ class SchemeEligibilityEngine(CodedTool):
         # 2. EDU-002: National Means-cum-Merit Scholarship Scheme (NMMSS)
         # -------------------------------------------------------------
         elif sid == "EDU-002":
-            if occupation == "farmer":
+            if occupation != "student":
                 is_eligible = False
                 rules_log.append({"rule": "Target Group", "status": "FAIL", "reason": "Secondary school student scholarship (Class IX-XII)."})
             elif edu_level in ("undergraduate", "engineering", "postgraduate", "phd"):
@@ -212,28 +282,28 @@ class SchemeEligibilityEngine(CodedTool):
             # Income ceiling: ₹3.5 Lakhs
             if income > 350000:
                 is_eligible = False
-                rules_log.append({"rule": "Parental Income", "status": "FAIL", "reason": f"Parental income ₹{income:,.0f} exceeds ₹3,50,000 ceiling."})
+                rules_log.append({"rule": "Parental Income", "status": "FAIL", "reason": "Family income exceeds the applicable income ceiling."})
             else:
-                rules_log.append({"rule": "Parental Income", "status": "PASS", "reason": f"Parental income ₹{income:,.0f} <= ₹3,50,000 ceiling."})
+                rules_log.append({"rule": "Parental Income", "status": "PASS", "reason": "Family income meets the applicable income ceiling."})
 
         # -------------------------------------------------------------
         # 3. EDU-003: Top Class Education for SC Students
         # -------------------------------------------------------------
         elif sid == "EDU-003":
-            if "SC" not in caste:
+            if not is_sc:
                 is_eligible = False
-                rules_log.append({"rule": "Social Category", "status": "FAIL", "reason": f"Strictly reserved for Scheduled Caste (SC) students. Declared: {caste}."})
+                rules_log.append({"rule": "Social Category", "status": "FAIL", "reason": "This scheme requires the Scheduled Caste (SC) category."})
             else:
                 rules_log.append({"rule": "Social Category", "status": "PASS", "reason": "Candidate belongs to Scheduled Caste (SC)."})
 
             # Income ceiling: ₹8.0 Lakhs
             if income > 800000:
                 is_eligible = False
-                rules_log.append({"rule": "Income Ceiling", "status": "FAIL", "reason": f"Family income ₹{income:,.0f} exceeds ₹8,00,000 ceiling."})
+                rules_log.append({"rule": "Income Ceiling", "status": "FAIL", "reason": "Family income exceeds the applicable income ceiling."})
             else:
-                rules_log.append({"rule": "Income Ceiling", "status": "PASS", "reason": f"Family income ₹{income:,.0f} <= ₹8,00,000 ceiling."})
+                rules_log.append({"rule": "Income Ceiling", "status": "PASS", "reason": "Family income meets the applicable income ceiling."})
 
-            if occupation == "farmer":
+            if occupation != "student":
                 is_eligible = False
                 rules_log.append({"rule": "Institution Enrollment", "status": "FAIL", "reason": "Requires admission in notified premier institute (IIT/NIT/IIIT/IIM/AIIMS)."})
             else:
@@ -243,48 +313,48 @@ class SchemeEligibilityEngine(CodedTool):
         # 4. EDU-004: Top Class Higher Education for ST Students
         # -------------------------------------------------------------
         elif sid == "EDU-004":
-            if occupation == "farmer":
+            if occupation != "student":
                 is_eligible = False
                 rules_log.append({"rule": "Institution Enrollment", "status": "FAIL", "reason": "Requires enrollment in notified premier higher education institute."})
-            elif "ST" not in caste:
+            elif not is_st:
                 is_eligible = False
-                rules_log.append({"rule": "Social Category", "status": "FAIL", "reason": f"Strictly reserved for Scheduled Tribe (ST) students. Declared: {caste}."})
+                rules_log.append({"rule": "Social Category", "status": "FAIL", "reason": "This scheme requires the Scheduled Tribe (ST) category."})
             else:
                 rules_log.append({"rule": "Social Category", "status": "PASS", "reason": "Candidate belongs to Scheduled Tribe (ST)."})
 
             # Income ceiling: ₹6.0 Lakhs
             if income > 600000:
                 is_eligible = False
-                rules_log.append({"rule": "Income Ceiling", "status": "FAIL", "reason": f"Family income ₹{income:,.0f} exceeds ₹6,00,000 ceiling."})
+                rules_log.append({"rule": "Income Ceiling", "status": "FAIL", "reason": "Family income exceeds the applicable income ceiling."})
             else:
-                rules_log.append({"rule": "Income Ceiling", "status": "PASS", "reason": f"Family income ₹{income:,.0f} <= ₹6,00,000 ceiling."})
+                rules_log.append({"rule": "Income Ceiling", "status": "PASS", "reason": "Family income meets the applicable income ceiling."})
 
         # -------------------------------------------------------------
         # 5. EDU-005: Post-Matric Scholarship for SC Students (PMS-SC)
         # -------------------------------------------------------------
         elif sid == "EDU-005":
-            if occupation == "farmer":
+            if occupation != "student":
                 is_eligible = False
                 rules_log.append({"rule": "Target Group", "status": "FAIL", "reason": "Exclusive to students pursuing post-matric courses."})
-            elif "SC" not in caste:
+            elif not is_sc:
                 is_eligible = False
-                rules_log.append({"rule": "Social Category", "status": "FAIL", "reason": f"Strictly reserved for Scheduled Caste (SC) students. Declared: {caste}."})
+                rules_log.append({"rule": "Social Category", "status": "FAIL", "reason": "This scheme requires the Scheduled Caste (SC) category."})
             else:
                 rules_log.append({"rule": "Social Category", "status": "PASS", "reason": "Candidate belongs to Scheduled Caste (SC)."})
 
             # Income ceiling: ₹2.5 Lakhs
             if income > 250000:
                 is_eligible = False
-                rules_log.append({"rule": "Income Ceiling", "status": "FAIL", "reason": f"Family income ₹{income:,.0f} exceeds ₹2,50,000 ceiling (Exceeded by ₹{income - 250000:,.0f})."})
+                rules_log.append({"rule": "Income Ceiling", "status": "FAIL", "reason": "Family income exceeds the applicable income ceiling."})
             else:
-                rules_log.append({"rule": "Income Ceiling", "status": "PASS", "reason": f"Family income ₹{income:,.0f} <= ₹2,50,000 ceiling."})
+                rules_log.append({"rule": "Income Ceiling", "status": "PASS", "reason": "Family income meets the applicable income ceiling."})
 
         # -------------------------------------------------------------
         # AP-EDU-001: Jagananna Vidya Deevena (RTF - Full Tuition Fee Reimbursement)
         # -------------------------------------------------------------
         elif sid == "AP-EDU-001":
             state = profile.get("state", "").lower()
-            if occupation == "farmer":
+            if occupation != "student":
                 is_eligible = False
                 rules_log.append({"rule": "Target Group", "status": "FAIL", "reason": "Exclusive to students pursuing higher technical/degree courses."})
             elif state and "andhra" not in state and "ap" != state and state != "all":
@@ -296,9 +366,9 @@ class SchemeEligibilityEngine(CodedTool):
             # Income ceiling: ₹2.5 Lakhs
             if income > 250000:
                 is_eligible = False
-                rules_log.append({"rule": "Income Ceiling", "status": "FAIL", "reason": f"Family income ₹{income:,.0f} exceeds ₹2,50,000 ceiling."})
+                rules_log.append({"rule": "Income Ceiling", "status": "FAIL", "reason": "Family income exceeds the applicable income ceiling."})
             else:
-                rules_log.append({"rule": "Income Ceiling", "status": "PASS", "reason": f"Family income ₹{income:,.0f} <= ₹2,50,000 ceiling."})
+                rules_log.append({"rule": "Income Ceiling", "status": "PASS", "reason": "Family income meets the applicable income ceiling."})
 
             # Course requirement
             if edu_level in ("school", "class_8", "class_10"):
@@ -312,7 +382,7 @@ class SchemeEligibilityEngine(CodedTool):
         # -------------------------------------------------------------
         elif sid == "AP-EDU-002":
             state = profile.get("state", "").lower()
-            if occupation == "farmer":
+            if occupation != "student":
                 is_eligible = False
                 rules_log.append({"rule": "Target Group", "status": "FAIL", "reason": "Exclusive to students pursuing higher technical/degree courses."})
             elif state and "andhra" not in state and "ap" != state and state != "all":
@@ -324,9 +394,9 @@ class SchemeEligibilityEngine(CodedTool):
             # Income ceiling: ₹2.5 Lakhs
             if income > 250000:
                 is_eligible = False
-                rules_log.append({"rule": "Income Ceiling", "status": "FAIL", "reason": f"Family income ₹{income:,.0f} exceeds ₹2,50,000 ceiling."})
+                rules_log.append({"rule": "Income Ceiling", "status": "FAIL", "reason": "Family income exceeds the applicable income ceiling."})
             else:
-                rules_log.append({"rule": "Income Ceiling", "status": "PASS", "reason": f"Family income ₹{income:,.0f} <= ₹2,50,000 ceiling."})
+                rules_log.append({"rule": "Income Ceiling", "status": "PASS", "reason": "Family income meets the applicable income ceiling."})
 
             if edu_level in ("school", "class_8", "class_10"):
                 is_eligible = False
@@ -339,7 +409,7 @@ class SchemeEligibilityEngine(CodedTool):
         # -------------------------------------------------------------
         elif sid == "KA-EDU-001":
             state = profile.get("state", "").lower()
-            if occupation == "farmer":
+            if occupation != "student":
                 is_eligible = False
                 rules_log.append({"rule": "Target Group", "status": "FAIL", "reason": "Exclusive to students pursuing post-matric courses."})
             elif state and "karnataka" not in state and "ka" != state and state != "all":
@@ -349,25 +419,25 @@ class SchemeEligibilityEngine(CodedTool):
                 rules_log.append({"rule": "Domicile State", "status": "PASS", "reason": "Student has Karnataka domicile."})
 
             # Income ceiling: ₹2.5 Lakhs for SC/ST/Cat-1; ₹1.0 Lakh for 2A/2B/3A/3B/OBC
-            income_cap = 250000 if any(k in caste for k in ("SC", "ST", "CAT-1")) else 100000
+            income_cap = 250000 if is_sc or is_st or caste in {"CAT-1", "CATEGORY-1", "CAT 1", "CATEGORY 1"} else 100000
             if income > income_cap:
                 is_eligible = False
-                rules_log.append({"rule": "Income Ceiling", "status": "FAIL", "reason": f"Family income ₹{income:,.0f} exceeds ₹{income_cap:,.0f} ceiling for category {caste}."})
+                rules_log.append({"rule": "Income Ceiling", "status": "FAIL", "reason": "Family income exceeds the applicable income ceiling."})
             else:
-                rules_log.append({"rule": "Income Ceiling", "status": "PASS", "reason": f"Family income ₹{income:,.0f} <= ₹{income_cap:,.0f} ceiling for {caste}."})
+                rules_log.append({"rule": "Income Ceiling", "status": "PASS", "reason": "Family income meets the applicable income ceiling."})
 
         # -------------------------------------------------------------
         # 6. FARM-001: Pradhan Mantri Kisan Samman Nidhi (PM-KISAN)
         # -------------------------------------------------------------
         elif sid == "FARM-001":
-            if occupation == "student":
+            if occupation != "farmer":
                 is_eligible = False
                 rules_log.append({"rule": "Occupation Requirement", "status": "FAIL", "reason": "Farmer landholder family scheme."})
             elif land_acres <= 0.0:
                 is_eligible = False
                 rules_log.append({"rule": "Land Record", "status": "FAIL", "reason": "Requires cultivable landholding in revenue records."})
             else:
-                rules_log.append({"rule": "Land Record", "status": "PASS", "reason": f"Holds {land_acres} acres cultivable land."})
+                rules_log.append({"rule": "Land Record", "status": "PASS", "reason": "Records indicate a cultivable landholding."})
 
             # Exclusion: Income Tax Payers
             if is_taxpayer:
@@ -380,45 +450,45 @@ class SchemeEligibilityEngine(CodedTool):
         # 7. FARM-002: Pradhan Mantri Fasal Bima Yojana (PMFBY)
         # -------------------------------------------------------------
         elif sid == "FARM-002":
-            if occupation == "student":
+            if occupation != "farmer":
                 is_eligible = False
                 rules_log.append({"rule": "Occupation", "status": "FAIL", "reason": "Crop insurance for cultivators."})
             elif land_acres <= 0.0:
                 is_eligible = False
                 rules_log.append({"rule": "Cultivation Proof", "status": "FAIL", "reason": "Requires land title or valid tenant/sharecropper cultivation agreement."})
             else:
-                rules_log.append({"rule": "Cultivation Proof", "status": "PASS", "reason": f"Active cultivator with {land_acres} acres under notification."})
+                rules_log.append({"rule": "Cultivation Proof", "status": "PASS", "reason": "Active cultivator with land under the applicable notification."})
 
         # -------------------------------------------------------------
         # 8. FARM-003: Kisan Credit Card (KCC)
         # -------------------------------------------------------------
         elif sid == "FARM-003":
-            if occupation == "student":
+            if occupation != "farmer":
                 is_eligible = False
                 rules_log.append({"rule": "Occupation", "status": "FAIL", "reason": "Institutional agricultural credit facility for farmers."})
             elif land_acres <= 0.0:
                 rules_log.append({"rule": "Cultivation Scope", "status": "PASS", "reason": "Can apply via oral lessee / SHG / dairy / fisheries segment."})
             else:
-                rules_log.append({"rule": "Cultivation Scope", "status": "PASS", "reason": f"Owner cultivator with {land_acres} acres eligible for scale of finance credit."})
+                rules_log.append({"rule": "Cultivation Scope", "status": "PASS", "reason": "Owner cultivator may be eligible for scale of finance credit."})
 
         # -------------------------------------------------------------
         # 9. FARM-004: PMKSY — Per Drop More Crop (PDMC)
         # -------------------------------------------------------------
         elif sid == "FARM-004":
-            if occupation == "student":
+            if occupation != "farmer":
                 is_eligible = False
                 rules_log.append({"rule": "Occupation", "status": "FAIL", "reason": "Micro-irrigation subsidy for agricultural cultivators."})
             elif land_acres <= 0.0:
                 is_eligible = False
                 rules_log.append({"rule": "Land Requirement", "status": "FAIL", "reason": "Requires identifiable agricultural land for drip/sprinkler installation."})
             else:
-                rules_log.append({"rule": "Land Requirement", "status": "PASS", "reason": f"Cultivable land ({land_acres} acres) eligible for micro-irrigation assistance."})
+                rules_log.append({"rule": "Land Requirement", "status": "PASS", "reason": "Cultivable land is recorded for the micro-irrigation application."})
 
         # -------------------------------------------------------------
         # 10. FARM-005: Pradhan Mantri Kisan Maandhan Yojana (PM-KMY)
         # -------------------------------------------------------------
         elif sid == "FARM-005":
-            if occupation == "student":
+            if occupation != "farmer":
                 is_eligible = False
                 rules_log.append({"rule": "Occupation", "status": "FAIL", "reason": "Farmer contributory pension scheme."})
             elif land_acres <= 0.0:
@@ -426,16 +496,16 @@ class SchemeEligibilityEngine(CodedTool):
                 rules_log.append({"rule": "Land Record", "status": "FAIL", "reason": "Intended for small and marginal landholding farmers."})
             elif land_acres > 5.0:  # 2 hectares = ~5 acres
                 is_eligible = False
-                rules_log.append({"rule": "Landholding Limit", "status": "FAIL", "reason": f"Landholding {land_acres} acres exceeds maximum limit of 2 hectares (5.0 acres)."})
+                rules_log.append({"rule": "Landholding Limit", "status": "FAIL", "reason": "Landholding exceeds the maximum limit of 2 hectares."})
             else:
-                rules_log.append({"rule": "Landholding Limit", "status": "PASS", "reason": f"Small/marginal farmer with {land_acres} acres (<= 2 hectares)."})
+                rules_log.append({"rule": "Landholding Limit", "status": "PASS", "reason": "The reported landholding is within the 2 hectare limit."})
 
             # Age window: 18 - 40 years
             if age < 18 or age > 40:
                 is_eligible = False
-                rules_log.append({"rule": "Entry Age", "status": "FAIL", "reason": f"Age {age} is outside the statutory entry age window of 18–40 years."})
+                rules_log.append({"rule": "Entry Age", "status": "FAIL", "reason": "Age is outside the statutory entry window of 18–40 years."})
             else:
-                rules_log.append({"rule": "Entry Age", "status": "PASS", "reason": f"Age {age} is within 18–40 entry window."})
+                rules_log.append({"rule": "Entry Age", "status": "PASS", "reason": "Age is within the statutory 18–40 entry window."})
 
             if is_taxpayer:
                 is_eligible = False

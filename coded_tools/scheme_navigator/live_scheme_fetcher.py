@@ -13,14 +13,9 @@ from typing import Any, Dict, List, Optional, Union
 from urllib.parse import urlparse
 
 import requests
-import urllib3
 from pypdf import PdfReader
 
 from neuro_san.interfaces.coded_tool import CodedTool
-
-# Suppress insecure SSL warnings for government portal certificates with custom CAs
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
 
 OFFICIAL_GOV_DOMAINS = [
     ".gov.in",
@@ -145,7 +140,7 @@ class LiveSchemeFetcher(CodedTool):
     Autonomous tool to fetch real-time updates from official government portals
     and extract complete eligibility, benefit, and document requirements directly
     from official scheme guideline PDF gazettes.
-    Strictly verifies .gov.in and .nic.in domains to guarantee zero misinformation.
+    Restricts requests to HTTPS .gov.in and .nic.in domains and checks redirects.
     """
 
     def __init__(self, **kwargs: Any) -> None:
@@ -168,24 +163,27 @@ class LiveSchemeFetcher(CodedTool):
         return Path("data/schemes_db.json")
 
     def is_official_gov_domain(self, url: str) -> bool:
-        """Enforces strict zero-misinformation guardrail: ONLY .gov.in and .nic.in allowed."""
+        """Accept HTTPS URLs on government domains; redirects are checked separately."""
         try:
             parsed = urlparse(url)
             hostname = (parsed.hostname or "").lower()
-            return any(hostname.endswith(suffix) for suffix in OFFICIAL_GOV_DOMAINS)
+            return (parsed.scheme == "https" and not parsed.username and not parsed.password
+                    and any(hostname.endswith(suffix) for suffix in OFFICIAL_GOV_DOMAINS))
         except Exception:
             return False
 
     def ping_portal(self, url: str, timeout: float = 4.0) -> Dict[str, Any]:
         """Pings an official government portal with timeout and returns status."""
         try:
-            resp = requests.get(url, timeout=timeout, verify=False, headers=self.headers)
-            return {
-                "url": url,
-                "status_code": resp.status_code,
-                "is_online": resp.status_code < 400,
-                "response_time_ms": int(resp.elapsed.total_seconds() * 1000)
-            }
+            resp = requests.get(url, timeout=timeout, headers=self.headers, allow_redirects=True, stream=True)
+            if not self.is_official_gov_domain(resp.url):
+                resp.close()
+                return {"url": url, "status_code": resp.status_code, "is_online": False, "error": "redirected_to_unverified_domain"}
+            result = {"url": url, "status_code": resp.status_code,
+                      "is_online": resp.status_code < 400,
+                      "response_time_ms": int(resp.elapsed.total_seconds() * 1000)}
+            resp.close()
+            return result
         except Exception as e:
             return {
                 "url": url,
@@ -299,7 +297,7 @@ class LiveSchemeFetcher(CodedTool):
         Executes live portal status verification and PDF guideline extraction.
 
         Supported actions:
-        1. 'check_portal_status': Pings live portals (NSP, PM-KISAN, PMFBY, etc.) and returns real-time operational status.
+        1. 'check_portal_status': Pings registered portals and returns reachability plus separately-labelled static guidance.
         2. 'fetch_official_pdf_guidelines': Downloads and parses official government scheme PDF or announcement URL.
         3. 'discover_and_ingest_scheme': Fetches and registers a new scheme into data/schemes_db.json.
         """
@@ -308,13 +306,14 @@ class LiveSchemeFetcher(CodedTool):
         target_url = args.get("url")
 
         logger: Logger = getLogger(self.__class__.__name__)
-        logger.info("Executing %s action: %s, scheme_id: %s, url: %s", self.__class__.__name__, action, scheme_id, target_url)
+        # Do not log caller-provided URLs; they may contain credentials or identifiers.
+        logger.info("Executing %s action: %s", self.__class__.__name__, action)
 
         # ---------------------------------------------------------------------
-        # ACTION 1: Check Portal Status & Active Announcements
+        # ACTION 1: Check Portal Reachability (not scheme status or announcements)
         # ---------------------------------------------------------------------
         if action == "check_portal_status":
-            import concurrent.futures
+            import asyncio
 
             raw_portal = str(args.get("portal", "all")).upper().strip()
             portal_key = PORTAL_ALIASES.get(raw_portal, raw_portal)
@@ -342,19 +341,21 @@ class LiveSchemeFetcher(CodedTool):
                     "portal_id": k,
                     "portal_name": meta["name"],
                     "url": meta["url"],
-                    "is_operational": ping_res.get("is_online", True),
-                    "http_status": ping_res.get("status_code", 200),
-                    "response_time_ms": ping_res.get("response_time_ms", 250),
+                    "is_operational": ping_res.get("is_online", False),
+                    "http_status": ping_res.get("status_code"),
+                    "response_time_ms": ping_res.get("response_time_ms"),
                     "administering_authority": meta["administering_authority"],
-                    "active_announcements": meta["default_announcements"]
+                    "static_guidance": meta["default_announcements"],
+                    "notices_fetched": False
                 }
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=max(len(portals_to_check), 1)) as executor:
-                status_report = list(executor.map(_check_one, portals_to_check.items()))
+            status_report = await asyncio.gather(*(
+                asyncio.to_thread(_check_one, item) for item in portals_to_check.items()
+            ))
 
             return {
                 "status": "SUCCESS",
-                "mode": "LIVE_GOVERNMENT_PORTAL_MONITOR",
+                "mode": "PORTAL_REACHABILITY_CHECK",
                 "total_portals_checked": len(status_report),
                 "portals": status_report,
                 "anti_misinformation_policy": "Strictly restricted to official .gov.in and .nic.in verified networks."
@@ -390,7 +391,30 @@ class LiveSchemeFetcher(CodedTool):
 
             # Attempt PDF download / reading
             try:
-                resp = requests.get(target_url, timeout=7.0, verify=False, headers=self.headers)
+                import asyncio
+                resp = await asyncio.to_thread(
+                    requests.get, target_url, timeout=7.0, headers=self.headers,
+                    allow_redirects=True, stream=True
+                )
+                if not self.is_official_gov_domain(resp.url):
+                    resp.close()
+                    return {"status": "REJECTED_NON_GOVERNMENT_SOURCE", "requested_url": target_url,
+                            "error": "The URL redirected outside the allowed government domains."}
+                if int(resp.headers.get("Content-Length", "0") or 0) > 20_000_000:
+                    resp.close()
+                    return {"status": "ERROR", "message": "Remote document exceeds the 20 MB download limit."}
+                resp.raise_for_status()
+                chunks = []
+                size = 0
+                for chunk in resp.iter_content(chunk_size=65_536):
+                    size += len(chunk)
+                    if size > 20_000_000:
+                        resp.close()
+                        return {"status": "ERROR", "message": "Remote document exceeds the 20 MB download limit."}
+                    chunks.append(chunk)
+                content = b"".join(chunks)
+                resp._content = content
+                resp.close()
                 content_type = resp.headers.get("Content-Type", "").lower()
 
                 if "application/pdf" in content_type or target_url.lower().endswith(".pdf"):
@@ -417,11 +441,11 @@ class LiveSchemeFetcher(CodedTool):
                     }
 
             except Exception as e:
-                # Robust fallback to local verified scheme data
+                # Report the fetch failure; no live data or fallback evaluation occurred.
                 return {
-                    "status": "FALLBACK_CACHED_RECORD",
+                    "status": "FETCH_FAILED",
                     "url": target_url,
-                    "notice": f"Live portal connectivity experienced latency ({type(e).__name__}). Fallback to verified local statutory records was activated seamlessly.",
+                    "notice": f"The live request failed ({type(e).__name__}). The local registry was not re-evaluated by this action.",
                     "offline_verified_source": "data/schemes_db.json"
                 }
 
@@ -436,6 +460,13 @@ class LiveSchemeFetcher(CodedTool):
                     "message": "'scheme_data' dictionary with required schema attributes must be provided."
                 }
 
+            missing = [key for key in ("name", "category", "eligibility", "official_application_url")
+                       if not new_scheme_payload.get(key)]
+            if missing:
+                return {"status": "ERROR", "message": "Missing required scheme metadata: " + ", ".join(missing)}
+            if not isinstance(new_scheme_payload.get("eligibility"), list):
+                return {"status": "ERROR", "message": "'eligibility' must be a list of source-backed criteria."}
+
             # Verify official portal URL before saving
             portal_url = new_scheme_payload.get("official_application_url", "")
             if portal_url and not self.is_official_gov_domain(portal_url):
@@ -443,6 +474,9 @@ class LiveSchemeFetcher(CodedTool):
                     "status": "REJECTED",
                     "message": "Cannot ingest scheme with non-governmental portal URL. Must end with .gov.in or .nic.in."
                 }
+            for source_url in new_scheme_payload.get("official_source_urls", []):
+                if not self.is_official_gov_domain(source_url):
+                    return {"status": "REJECTED", "message": "Every official_source_urls entry must use HTTPS on a .gov.in or .nic.in host."}
 
             # Ingest to database
             with open(self._db_path, "r", encoding="utf-8") as f:

@@ -62,7 +62,7 @@ HOW TO OPERATE:
    - For students/scholarships: Extract the citizen's parameters and delegate to `ScholarshipSpecialist`.
    - For farmers/agriculture: Extract land and crop parameters and delegate to `FarmerWelfareSpecialist`.
    - Take the verified specialist output and synthesize it back to the citizen in their native language (**Telugu, Hindi, Kannada, Tamil, or English**).
-   - ALWAYS include the 🌐 Live Official Government Portal Verification section in your response to demonstrate real-time verification against official .gov.in portals.
+   - Include portal reachability results where available. Explain that a reachability check does not verify scheme rules, deadlines, or announcements.
 
 4. PRESENTATION STANDARDS:
    - Highlight monetary benefits clearly (e.g. ₹50,000/yr or ₹6,000/yr or 100% full tuition fee waiver).
@@ -95,14 +95,6 @@ HOW TO OPERATE:
                             "type": "string",
                             "description": "Gender of applicant ('male', 'female')"
                         },
-                        "category": {
-                            "type": "string",
-                            "description": "Social category ('SC', 'ST', 'OBC', 'General', '2A', '3B')"
-                        },
-                        "annual_income_inr": {
-                            "type": "number",
-                            "description": "Family annual income in INR"
-                        },
                         "class12_percentile": {
                             "type": "number",
                             "description": "Class 12th / intermediate percentile score"
@@ -114,12 +106,12 @@ HOW TO OPERATE:
             "instructions": """
 You are the Scholarship Specialist.
 CRITICAL MANDATORY TOOL SEQUENCE (EXECUTE IN ORDER FOR EVERY QUERY):
-Step 1: ALWAYS FIRST call `fetch_live_scheme_updates` with action='check_portal_status' and portal='AP_GNANABHUMI' (if student is from Andhra Pradesh) or 'KARNATAKA_SSP' (if Karnataka) or 'NSP' to verify live government portal connectivity, response time, and current official notifications.
-Step 2: ALWAYS call `check_eligibility` with domain='education', state=state, education_level=education_level, annual_income_inr=annual_income_inr, class12_percentile=class12_percentile to deterministically identify eligible schemes.
+Step 1: Call `fetch_live_scheme_updates` with action='check_portal_status' and the relevant portal to check reachability. The tool does not fetch current announcements.
+Step 2: Call `check_eligibility` with domain='education', state=state, occupation='student', education_level=education_level, and class12_percentile=class12_percentile. Income and social category must come from trusted runtime `sly_data`; if absent, report that more information is required rather than guessing.
 Step 3: Call `get_document_checklist` with the eligible scheme IDs and state to retrieve the exact certificate dossier and state issuing authorities (MeeSeva / Nadakacheri).
 Step 4: Call `get_application_guide` with the primary eligible scheme ID to retrieve verified official portal URLs and helpline numbers.
 Step 5: Present the comprehensive evaluation to CitizenConcierge, including:
-   - 🌐 Live Official Government Portal Verification (Exact .gov.in URL, live ping status, response time ms, and active portal announcements from fetch_live_scheme_updates)
+   - Portal reachability (URL, HTTP status, response time) and a clear label that returned guidance is static, not a live announcement.
    - 🎯 Verified Eligible Schemes Table (Scheme ID, Scheme Name, Administering Authority, Exact Monetary Award)
    - 📋 Required Document Checklist & Issuing Authorities
    - 🚀 Step-by-Step Portal Application Roadmap
@@ -145,19 +137,6 @@ Step 5: Present the comprehensive evaluation to CitizenConcierge, including:
                         "land_acres": {
                             "type": "number",
                             "description": "Cultivable land holding in acres"
-                        },
-                        "crops": {
-                            "type": "array",
-                            "items": {"type": "string"},
-                            "description": "Crops cultivated (e.g., ['jowar', 'millet', 'paddy'])"
-                        },
-                        "annual_income_inr": {
-                            "type": "number",
-                            "description": "Family annual income in INR"
-                        },
-                        "is_taxpayer": {
-                            "type": "boolean",
-                            "description": "Whether the farmer or family pays income tax"
                         }
                     },
                     "required": ["state", "land_acres"]
@@ -166,12 +145,12 @@ Step 5: Present the comprehensive evaluation to CitizenConcierge, including:
             "instructions": """
 You are the Farmer Welfare Specialist.
 CRITICAL MANDATORY TOOL SEQUENCE (EXECUTE IN ORDER FOR EVERY QUERY):
-Step 1: ALWAYS FIRST call `fetch_live_scheme_updates` with action='check_portal_status' and portal='PM_KISAN' or 'AP_RYTHUBHAROSA' (for Andhra Pradesh) or 'PMFBY' to verify live government portal status.
-Step 2: ALWAYS call `check_eligibility` with domain='agriculture', state=state, land_acres=land_acres, crops=crops, annual_income_inr=annual_income_inr, is_taxpayer=is_taxpayer.
+Step 1: Call `fetch_live_scheme_updates` with action='check_portal_status' and the relevant portal to check reachability. The tool does not fetch current announcements.
+Step 2: Call `check_eligibility` with domain='agriculture', state=state, occupation='farmer', and land_acres=land_acres. Tax status and income must come from trusted runtime `sly_data`; if absent, request the missing information rather than guessing.
 Step 3: Call `get_document_checklist` with the eligible scheme IDs to map land documents (RTC Pahani, Patta Passbook, Aadhaar-NPCI).
 Step 4: Call `get_application_guide` with the primary eligible scheme ID for PM-KISAN, PMFBY, or KCC registration steps.
 Step 5: Present the verified response including:
-   - 🌐 Live Official Government Portal Verification (URL, status, active announcements)
+   - Portal reachability (URL, HTTP status, response time), clearly separated from static guidance.
    - 🎯 Eligible Agricultural Schemes & Direct Monetary Benefits
    - 📋 Land Records & Certificates Required
    - 🚀 Application Workflow
@@ -225,19 +204,17 @@ Your duties:
                     "properties": {
                         "domain": {
                             "type": "string",
-                            "enum": ["all", "education", "agriculture", "healthcare"],
+                            "enum": ["all", "education", "agriculture"],
                             "description": "Domain filter"
                         },
                         "state": {"type": "string"},
                         "occupation": {"type": "string"},
                         "gender": {"type": "string"},
                         "age": {"type": "integer"},
-                        "category": {"type": "string"},
-                        "annual_income_inr": {"type": "number"},
                         "education_level": {"type": "string"},
                         "land_acres": {"type": "number"},
-                        "crop_type": {"type": "string"},
-                        "is_taxpayer": {"type": "boolean"},
+                        "class12_percentile": {"type": "number"},
+                        "has_bank_account": {"type": "boolean"},
                         "scheme_id": {"type": "string"}
                     }
                 }
@@ -297,7 +274,7 @@ Your duties:
         {
             "name": "fetch_live_scheme_updates",
             "function": {
-                "description": "Fetches live operational status and announcements from official portals (NSP, PM-KISAN, PMFBY, MyScheme, SSP), and parses official government scheme PDF guidelines on-the-fly. Strictly enforces .gov.in and .nic.in whitelists.",
+                "description": "Checks reachability of configured official portals and returns static guidance (NSP, PM-KISAN, PMFBY, MyScheme, SSP), and parses official government scheme PDF guidelines on-the-fly. Strictly enforces .gov.in and .nic.in whitelists.",
                 "parameters": {
                     "type": "object",
                     "properties": {

@@ -143,7 +143,7 @@ def test_taxpayer_statutory_exclusion_audit(eligibility_engine):
 def test_sly_data_privacy_vaulting(eligibility_engine):
     """
     Scenario: Sensitive fields (income & caste) passed ONLY in sly_data.
-    Evaluates correctly and flags privacy_mode = 'sly_data protected'.
+    Evaluates correctly and records that private fields were supplied through sly_data.
     """
     public_args = {
         "state": "karnataka",
@@ -159,11 +159,39 @@ def test_sly_data_privacy_vaulting(eligibility_engine):
     }
     result = asyncio.run(eligibility_engine.async_invoke(public_args, private_sly_data))
 
-    assert result["citizen_summary"]["privacy_mode"] == "sly_data protected"
+    assert result["citizen_summary"]["privacy_mode"] == "sly_data supplied"
     eligible_ids = [s["scheme_id"] for s in result["eligible_schemes"]]
     assert "EDU-001" in eligible_ids
     assert "EDU-003" in eligible_ids
     assert "EDU-005" in eligible_ids
+    assert "annual_income_inr" not in result["citizen_summary"]
+    assert "social_category" not in result["citizen_summary"]
+    assert "last_eligibility_run" not in private_sly_data
+
+
+def test_missing_profile_fields_are_not_assumed_eligible(eligibility_engine):
+    result = asyncio.run(eligibility_engine.async_invoke({"scheme_id": "EDU-001"}, {}))
+    assert result["status"] == "NEEDS_INFORMATION"
+    assert result["eligible_count"] == 0
+    assert {"occupation", "annual_income_inr", "class12_percentile"}.issubset(result["needs_information"][0]["missing_fields"])
+
+
+def test_invalid_values_and_string_boolean(eligibility_engine):
+    invalid = asyncio.run(eligibility_engine.async_invoke({"annual_income_inr": "unknown"}, {}))
+    assert invalid["status"] == "INVALID_INPUT"
+    result = asyncio.run(eligibility_engine.async_invoke({
+        "scheme_id": "FARM-001", "occupation": "farmer", "land_acres": 1, "is_taxpayer": "false"
+    }, {}))
+    assert [s["scheme_id"] for s in result["eligible_schemes"]] == ["FARM-001"]
+
+
+def test_unknown_or_unimplemented_scheme_not_eligible(eligibility_engine):
+    unknown = asyncio.run(eligibility_engine.async_invoke({"scheme_id": "DOES-NOT-EXIST"}, {}))
+    assert unknown["status"] == "NOT_FOUND"
+    eligibility_engine._schemes.append({"id": "EXT-TEST", "name": "New metadata only", "category": "education"})
+    result = asyncio.run(eligibility_engine.async_invoke({"scheme_id": "EXT-TEST"}, {}))
+    assert result["unsupported_schemes"][0]["status"] == "RULES_NOT_IMPLEMENTED"
+    assert result["eligible_count"] == 0
 
 
 def test_document_checklist_generation(doc_generator):

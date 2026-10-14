@@ -28,7 +28,10 @@ def test_gov_domain_whitelist_enforcement(fetcher):
         "https://coaching-center.org/government-money",
         "https://freemoney.biz/scholarship",
         "https://buddy4study.com/scholarship-details",
-        "http://unverified-portal.xyz"
+        "http://unverified-portal.xyz",
+        "http://pmkisan.gov.in/",
+        "https://pmkisan.gov.in.evil.example/",
+        "https://user:pass@pmkisan.gov.in/"
     ]
 
     for u in valid_urls:
@@ -38,20 +41,24 @@ def test_gov_domain_whitelist_enforcement(fetcher):
         assert fetcher.is_official_gov_domain(u) is False, f"Allowed invalid URL: {u}"
 
 
-def test_check_portal_status_operational(fetcher):
+def test_check_portal_status_operational(fetcher, monkeypatch):
     """
     Test that live portal status checker returns verified Indian government portals
-    with authority metadata and active announcement notices.
+    with authority metadata and clearly-labelled static guidance.
     """
+    monkeypatch.setattr(fetcher, "ping_portal", lambda url, timeout=4.0: {
+        "url": url, "status_code": 200, "is_online": True, "response_time_ms": 5
+    })
     result = fetcher.invoke({"action": "check_portal_status", "portal": "NSP"}, {})
     assert result["status"] == "SUCCESS"
-    assert result["mode"] == "LIVE_GOVERNMENT_PORTAL_MONITOR"
+    assert result["mode"] == "PORTAL_REACHABILITY_CHECK"
     assert len(result["portals"]) == 1
 
     nsp = result["portals"][0]
     assert nsp["portal_id"] == "NSP"
     assert "scholarships.gov.in" in nsp["url"]
-    assert len(nsp["active_announcements"]) >= 1
+    assert len(nsp["static_guidance"]) >= 1
+    assert nsp["notices_fetched"] is False
 
 
 def test_pdf_guideline_extraction_and_parsing(fetcher):
