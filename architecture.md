@@ -22,16 +22,16 @@ This crisis of delivery stems from four structural bottlenecks in the welfare de
    Illiterate or semi-literate citizens are routinely exploited by unauthorized local brokers charging 20% to 30% commissions for welfare programs that are 100% free by law.
 
 ### 1.2 Our Solution & Mission
-**Scheme Navigator (YojanaMitra AI)** contains a Neuro-SAN agent registry and a separate local CLI demo. The registry describes the intended multi-agent experience; `main.py` currently launches only the CLI. The CLI calls deterministic Python tools directly and is not, by itself, a running Neuro-SAN agent network. The intended system:
+**Scheme Navigator (YojanaMitra AI)** provides a Neuro-SAN agent network and a separate local CLI demo. Run `python main.py --agent` to launch the focused agent network and `nsflow` UI; run `python main.py` for direct local tool calls. The network:
 
 - Supports English by default and other configured languages when explicitly requested in the concierge prompt.
 - Evaluates profiles against implemented Python rules. Deterministic execution avoids LLM-generated decisions for those rules, but does not guarantee that criteria are current or complete.
-- Protects sensitive financial, caste, and landholding data using Neuro-SAN's **`sly_data` out-of-band privacy vault**, when the host routes those values privately; this repository does not guarantee prompt or log isolation.
+- Declares income, category, landholding, and taxpayer details in the front-man **`sly_data_schema`**, requires explicit consent in the eligibility tool, and rejects private fields passed in ordinary tool arguments. Runtime privacy still depends on the client and deployment configuration.
 - Provides rule-by-rule screening explanations, surfaces missing information and unsupported rules, and suggests next actions.
 - Checks reachability of configured official portals. Portal checks do not retrieve current announcements; optional fetch actions can parse PDF/HTML text from allowed HTTPS government domains.
 - Equips citizens with application guidance: state issuing authorities (*Nadakacheri, MeeSeva, DigiLocker, UIDAI*), common documents, and anti-fraud reminders.
 
-> **Implementation status:** The architecture diagrams below describe the intended Neuro-SAN registry flow. The repository's `main.py` entry point runs a local CLI that directly invokes coded tools; it does not execute the HOCON agent graph.
+> **Implementation status:** The diagrams describe the Neuro-SAN flow launched with `python main.py --agent`. The default `python main.py` mode remains a local CLI that directly invokes coded tools.
 
 ---
 
@@ -140,7 +140,7 @@ The agent collective is specified declaratively in HOCON (`registries/scheme_nav
                                     ▼
        ===== OPTIONAL HOST-CONFIGURED PRIVATE DATA ROUTING =============
        │  host-configured sly_data channel: Income, Caste, Ration Tier, Aadhaar DBT      │
-       │  (Out-of-band: never streamed to external LLM prompts!)       │
+       │  (Private only when the client/runtime preserves this channel) │
        =================================================================
 ```
 
@@ -224,34 +224,35 @@ Under standard LLM architectures, these attributes are injected directly into th
 
 #### 5.1 The configured `sly_data` boundary
 
-The coded tool accepts values from Neuro-SAN's `sly_data` channel. The agent registry and host deployment must explicitly configure which values enter that channel; tool code cannot prevent a model from seeing information disclosed in conversation.
+The front-man declares `privacy_consent`, annual income, social category, landholding, and taxpayer status in `sly_data_schema`. Clients that support this schema can collect private values separately from chat. The eligibility tool requires `privacy_consent: true` when private values are provided and rejects these fields if they arrive in normal tool arguments. Citizens should not type sensitive values into chat. Runtime behavior still depends on the client honoring the private channel.
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Citizen as Citizen User
+    participant Client as nsflow client
     participant Concierge as CitizenConcierge (LLM)
     participant Channel as Neuro-SAN Engine
     participant SlyData as host-configured sly_data channel (Out-of-Band)
     participant CodedTool as SchemeEligibilityEngine (Python)
 
-    Citizen->>Concierge: "My income is 1.4 Lakhs, SC student in Raichur"
-    Concierge->>Channel: Extract parameters
-    Note over Channel,SlyData: Sensitive fields segregated OUT-OF-BAND
-    Channel->>SlyData: Store {"annual_income_inr": 140000, "social_category": "SC"}
-    Channel->>Concierge: Public Args: {"state": "karnataka", "education_level": "engineering"}
-    
+    Citizen->>Client: "I'm a student in Raichur. Please screen me for scholarships."
+    Client->>Concierge: Public chat message
+    Client->>SlyData: After consent, collect private income/category fields
+    Note over Channel,SlyData: Client sends consent and sensitive fields OUT-OF-BAND
+    Concierge->>Channel: Public tool args: {"state": "karnataka", "education_level": "engineering"}
     Concierge->>CodedTool: async_invoke(args={state, education_level}, sly_data={income, caste})
     Note over CodedTool: Deterministic evaluation inside local Python memory
     CodedTool-->>Concierge: Returns Eligible Schemes: [EDU-001, EDU-003, EDU-005]
-    Note over Concierge: LLM synthesizes response WITHOUT exposing private vault data to logs
-    Concierge-->>Citizen: Vernacular advice with verified scheme benefits & portal links
+    Note over Concierge,SlyData: Private values are not included in the tool result
+    Concierge-->>Client: English-default advice with scheme sources and application steps
+    Client-->>Citizen: Display response
 ```
 
-1. **Parameter Separation**: The public `args` dictionary contains non-sensitive routing variables (`state: "karnataka"`, `education_level: "engineering"`, `occupation: "student"`).
-2. **Out-of-Band Transmission**: Sensitive variables can be segregated into `sly_data` only when the host supplies them through that channel; the registry does not establish this routing.
+1. **Parameter Separation**: The public `args` dictionary carries routing variables (`state`, `education_level`, `occupation`). Sensitive fields are not declared as tool parameters.
+2. **Out-of-Band Transmission**: The front-man schema declares the private fields, and the client sends them through `sly_data` after consent.
 3. **Local In-Memory Evaluation**: `SchemeEligibilityEngine` consumes both `args` and `sly_data` inside local Python memory.
-4. **Deployment responsibility**: This repository does not enforce model-prompt or external-log isolation. Deployments should avoid passing raw sensitive values in model-visible arguments and verify runtime logging behavior.
+4. **Deployment responsibility**: The tool rejects sensitive values in public tool arguments and does not return their values. Deployments must use a client that honors `sly_data` separation and verify their logging/tracing configuration.
 
 ---
 

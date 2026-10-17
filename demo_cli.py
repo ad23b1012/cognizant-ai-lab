@@ -27,6 +27,18 @@ from coded_tools.scheme_navigator.live_scheme_fetcher import LiveSchemeFetcher
 
 console = Console()
 
+PRIVATE_PROFILE_KEYS = {
+    "annual_income_inr", "income", "social_category", "category", "caste",
+    "land_acres", "is_taxpayer", "has_bank_account", "ration_card_tier", "aadhaar_seeded",
+}
+
+
+def move_private_profile_fields(args: Dict[str, Any], sly_data: Dict[str, Any]) -> None:
+    """Keep local demo private fields out of the tool's public argument dictionary."""
+    for key in PRIVATE_PROFILE_KEYS:
+        if key in args:
+            sly_data[key] = args.pop(key)
+
 
 SCRIPTED_PERSONAS = [
     {
@@ -43,6 +55,7 @@ SCRIPTED_PERSONAS = [
             "class12_percentile": 89.5
         },
         "sly_data": {
+            "privacy_consent": True,
             "annual_income_inr": 140000,
             "social_category": "SC",
             "ration_card_tier": "BPL",
@@ -64,6 +77,7 @@ SCRIPTED_PERSONAS = [
             "is_taxpayer": False
         },
         "sly_data": {
+            "privacy_consent": True,
             "annual_income_inr": 85000,
             "social_category": "ST",
             "ration_card_tier": "BPL",
@@ -84,6 +98,7 @@ SCRIPTED_PERSONAS = [
             "class12_percentile": 91.0
         },
         "sly_data": {
+            "privacy_consent": True,
             "annual_income_inr": 380000,
             "social_category": "ST",
             "ration_card_tier": "BPL"
@@ -104,6 +119,7 @@ SCRIPTED_PERSONAS = [
             "is_taxpayer": True
         },
         "sly_data": {
+            "privacy_consent": True,
             "annual_income_inr": 720000,
             "social_category": "General",
             "ration_card_tier": "APL"
@@ -126,7 +142,6 @@ def display_banner():
 
 def display_persona_card(persona: Dict[str, Any]):
     p_args = persona["args"]
-    p_sly = persona["sly_data"]
 
     table = Table(show_header=False, box=None, padding=(0, 2))
     table.add_row("[bold]Citizen Name:[/bold]", f"[cyan]{p_args.get('name')}[/cyan]")
@@ -134,20 +149,15 @@ def display_persona_card(persona: Dict[str, Any]):
     table.add_row("[bold]Occupation:[/bold]", f"[yellow]{p_args.get('occupation', '').title()}[/yellow]")
     table.add_row("[bold]Age / Gender:[/bold]", f"{p_args.get('age')} yrs / {p_args.get('gender', '').title()}")
     
-    # Showcase sly_data privacy
     table.add_row(
-        "[bold magenta]Annual Family Income:[/bold magenta]",
-        f"[green]₹{p_sly.get('annual_income_inr', 0):,}[/green] [dim](Local demo value passed via sly_data; not isolated from this CLI)[/dim]"
-    )
-    table.add_row(
-        "[bold magenta]Social Category / Quota:[/bold magenta]",
-        f"[white]{p_sly.get('social_category')}[/white] [dim](Local demo value passed via sly_data; not isolated from this CLI)[/dim]"
+        "[bold magenta]Private screening details:[/bold magenta]",
+        "[dim]Provided through sly_data; values are masked in this display[/dim]"
     )
 
     if p_args.get("occupation") == "farmer":
-        table.add_row("[bold]Landholdings:[/bold]", f"[white]{p_args.get('land_acres')} Acres[/white]")
+        table.add_row("[bold]Landholding:[/bold]", "[dim]Provided privately; value masked[/dim]")
         table.add_row("[bold]Crops Cultivated:[/bold]", f"[green]{', '.join(p_args.get('crops', []))}[/green]")
-        table.add_row("[bold]Income Tax Payer:[/bold]", f"{'Yes ⚠️ (Disqualified for DBT)' if p_args.get('is_taxpayer') else 'No (Eligible for DBT)'}")
+        table.add_row("[bold]Taxpayer status:[/bold]", "[dim]Provided privately; value masked[/dim]")
     else:
         table.add_row("[bold]Education Course:[/bold]", f"[white]{p_args.get('education_level', '').title()}[/white]")
         table.add_row("[bold]Merit Score:[/bold]", f"[green]{p_args.get('class12_percentile')}% (Class 12)[/green]")
@@ -162,6 +172,7 @@ async def run_agent_workflow(persona: Dict[str, Any]):
 
     args = persona["args"].copy()
     sly_data = persona["sly_data"].copy()
+    move_private_profile_fields(args, sly_data)
 
     console.print(
         "\n[bold yellow]Local demo workflow[/bold yellow] "
@@ -172,8 +183,11 @@ async def run_agent_workflow(persona: Dict[str, Any]):
 
     # 1. Evaluate eligibility using the local coded tool.
     elig_result = await engine.async_invoke(args, sly_data)
-    if not isinstance(elig_result, dict) or elig_result.get("status") == "INVALID_INPUT":
-        console.print(f"[bold red]Eligibility check could not run:[/bold red] {elig_result}")
+    if not isinstance(elig_result, dict) or elig_result.get("status") in {
+        "INVALID_INPUT", "PRIVATE_INPUT_REQUIRED", "CONSENT_REQUIRED", "NOT_FOUND"
+    }:
+        message = elig_result.get("message", str(elig_result)) if isinstance(elig_result, dict) else str(elig_result)
+        console.print(f"[bold red]Eligibility check could not run:[/bold red] {message}")
         return
     eligible_schemes = elig_result.get("eligible_schemes", [])
     ineligible_schemes = elig_result.get("ineligible_schemes", [])
@@ -192,6 +206,12 @@ async def run_agent_workflow(persona: Dict[str, Any]):
             details_table.add_row("[bold]Official Portal:[/bold]", f"[link={scheme['portal_url']}]{scheme['portal_url']}[/link]")
             if scheme.get("application_status"):
                 details_table.add_row("[bold]Registry note (verify live):[/bold]", f"[yellow]{scheme['application_status']}[/yellow]")
+            details_table.add_row(
+                "[bold]Registry source review:[/bold]",
+                str(scheme.get("source_reviewed_as_of") or registry_as_of),
+            )
+            if scheme.get("verification_notes"):
+                details_table.add_row("[bold]Verification note:[/bold]", scheme["verification_notes"])
             source_urls = scheme.get("source_urls", [])
             if source_urls:
                 details_table.add_row("[bold]Official sources:[/bold]", "\n".join(source_urls[:3]))
@@ -218,14 +238,15 @@ async def run_agent_workflow(persona: Dict[str, Any]):
         audit_table.add_column("Scheme", style="white", width=28)
         audit_table.add_column("Specific Failed Rule", style="red", width=30)
         audit_table.add_column("Next Step", style="yellow", width=30)
-        audit_table.add_column("Official Source", style="cyan", width=30)
+        audit_table.add_column("Official source / review date", style="cyan", width=34)
 
         for s in ineligible_schemes[:3]:  # Top 3 most relevant ineligibilities
             audit_table.add_row(
                 f"[{s['scheme_id']}] {s['scheme_name']}",
                 s["why_not_eligible"] or "Criteria mismatch",
                 s["actionable_advice"],
-                "\n".join(s.get("source_urls", [])[:2]) or "See official portal"
+                "\n".join(s.get("source_urls", [])[:2])
+                + f"\nRegistry as of {s.get('source_reviewed_as_of') or registry_as_of}"
             )
         console.print(audit_table)
 
@@ -234,34 +255,47 @@ async def run_agent_workflow(persona: Dict[str, Any]):
         for item in needs_information:
             fields = ", ".join(item.get("missing_fields", [])) or "profile details"
             console.print(f"  • {item.get('scheme_name', item.get('scheme_id'))}: provide {fields} to screen this scheme.")
+            sources = item.get("source_urls", [])
+            if sources:
+                console.print(f"    [dim]Official sources (registry as of {item.get('source_reviewed_as_of') or registry_as_of}): {'; '.join(sources[:2])}[/dim]")
 
     if unsupported_schemes:
         console.print("\n[bold dim]Rules not implemented for these registry entries[/bold dim]")
         for item in unsupported_schemes:
             console.print(f"  • {item.get('scheme_name', item.get('scheme_id'))} ({item.get('scheme_id')})")
+            sources = item.get("source_urls", [])
+            if sources:
+                console.print(f"    [dim]Official sources: {'; '.join(sources[:2])}[/dim]")
 
-    # 4. Document Checklist
+    # 4. Build a readiness checklist for the first eligible registry match.
     if eligible_schemes:
-        console.print("\n[bold cyan]Next steps for your strongest current match[/bold cyan]")
-        console.print("[dim]The first eligible result follows registry order; confirm current rules and deadlines with the authority.[/dim]")
-        eligible_ids = [s["scheme_id"] for s in eligible_schemes]
-        doc_result = await doc_tool.async_invoke({"scheme_ids": eligible_ids, "state": args.get("state")}, sly_data)
+        primary_scheme = eligible_schemes[0]
+        console.print("\n[bold cyan]Application readiness checklist[/bold cyan]")
+        console.print(
+            f"[dim]Starting with {primary_scheme['scheme_name']} (first eligible result in registry order). "
+            "This screen did not confirm the live application window or final eligibility.[/dim]"
+        )
+        doc_result = await doc_tool.async_invoke(
+            {"scheme_id": primary_scheme["scheme_id"], "state": args.get("state")}, sly_data
+        )
         console.print("  3. DocumentChecklistGenerator completed locally.")
-        console.print(f"\n[bold cyan]📑 OFFICIAL DOCUMENT PREPARATION CHECKLIST:[/bold cyan]")
+        console.print(f"\n[bold cyan]Documents to gather or verify for {primary_scheme['scheme_id']}:[/bold cyan]")
         doc_table = Table(show_lines=True)
+        doc_table.add_column("Ready?", style="yellow", width=10)
         doc_table.add_column("Certificate / Document", style="bold white", width=28)
         doc_table.add_column("Issuing Authority", style="cyan", width=25)
         doc_table.add_column("Digital Procurement & DigiLocker Tip", style="dim", width=40)
 
-        for d in doc_result["consolidated_checklist"][:4]:
+        for d in doc_result.get("consolidated_checklist", []):
             doc_table.add_row(
+                "[ ] Check",
                 d["document_name"],
                 d["issuing_authority"],
                 d["digital_acquisition_tips"]
             )
         console.print(doc_table)
 
-    # 5. Application Steps for Top Scheme
+    # 5. Show official application actions for the selected scheme.
     if eligible_schemes:
         top_scheme_id = eligible_schemes[0]["scheme_id"]
         guide_result = await guide_tool.async_invoke({"scheme_id": top_scheme_id}, sly_data)
@@ -275,7 +309,18 @@ async def run_agent_workflow(persona: Dict[str, Any]):
 
 async def interactive_mode():
     console.print("\n[bold cyan]=== Custom Interactive Citizen Consultation ===[/bold cyan]")
-    name = console.input("[bold]Enter Citizen Name: [/bold]") or "Citizen"
+    console.print(Panel(
+        "This CLI uses profile details only in the current local Python process for preliminary screening. "
+        "It does not send them to an LLM or write them to disk in this workflow. Private values are masked in the summary. "
+        "Do not enter Aadhaar numbers or other identity numbers.",
+        title="Privacy notice",
+        border_style="yellow",
+    ))
+    consent = console.input("Use the private profile values for this screening? Type YES to continue: ").strip()
+    if consent.casefold() != "yes":
+        console.print("[yellow]Screening cancelled; no profile details were requested.[/yellow]")
+        return
+
     occ = console.input("[bold]Occupation (student / farmer) [default: student]: [/bold]").lower() or "student"
     state = console.input("[bold]State (e.g. karnataka, andhra_pradesh) [default: karnataka]: [/bold]").lower() or "karnataka"
     income_str = console.input("[bold]Annual Family Income (INR) [default: 150000]: [/bold]") or "150000"
@@ -287,13 +332,14 @@ async def interactive_mode():
     category = console.input("[bold]Social Category (General / OBC / SC / ST) [default: SC]: [/bold]") or "SC"
 
     args = {
-        "name": name,
+        "name": "Demo applicant",
         "occupation": occ,
         "state": state,
         "gender": "male",
         "age": 20
     }
     sly_data = {
+        "privacy_consent": True,
         "annual_income_inr": income,
         "social_category": category,
         "ration_card_tier": "BPL"
@@ -301,14 +347,15 @@ async def interactive_mode():
 
     if occ == "farmer":
         acres_str = console.input("[bold]Landholding in Acres [default: 3.0]: [/bold]") or "3.0"
-        args["land_acres"] = float(acres_str)
-        args["is_taxpayer"] = False
+        sly_data["land_acres"] = float(acres_str)
+        taxpayer = console.input("Income-tax payer? (yes/no) [default: no]: ").strip().casefold()
+        sly_data["is_taxpayer"] = taxpayer in {"yes", "y"}
     else:
         args["education_level"] = "engineering"
         args["class12_percentile"] = 88.0
 
     custom_persona = {
-        "title": f"Custom Consultation for {name}",
+        "title": "Custom Consultation (private values masked)",
         "args": args,
         "sly_data": sly_data
     }
@@ -400,6 +447,7 @@ async def run_vernacular_showcase():
                 "gender": "male"
             },
             "sly_data": {
+                "privacy_consent": True,
                 "annual_income_inr": 85000,
                 "social_category": "ST",
                 "ration_card_tier": "BPL",
@@ -442,6 +490,7 @@ async def run_vernacular_showcase():
                 "gender": "male"
             },
             "sly_data": {
+                "privacy_consent": True,
                 "annual_income_inr": 140000,
                 "social_category": "SC",
                 "ration_card_tier": "BPL",
@@ -481,6 +530,7 @@ async def run_vernacular_showcase():
                 "gender": "male"
             },
             "sly_data": {
+                "privacy_consent": True,
                 "annual_income_inr": 90000,
                 "social_category": "OBC",
                 "ration_card_tier": "BPL",
@@ -521,6 +571,7 @@ async def run_vernacular_showcase():
                 "gender": "male"
             },
             "sly_data": {
+                "privacy_consent": True,
                 "annual_income_inr": 150000,
                 "social_category": "SC",
                 "ration_card_tier": "BPL",
@@ -554,6 +605,9 @@ async def run_vernacular_showcase():
 
     if sub_choice in ("1", "2", "3", "4"):
         item = next(d for d in vernacular_demos if d["id"] == sub_choice)
+        tool_args = item["params"].copy()
+        tool_sly_data = item["sly_data"].copy()
+        move_private_profile_fields(tool_args, tool_sly_data)
 
         console.print(f"\n[bold green]━━━ 🇮🇳 {item['lang']} Demonstration ━━━[/bold green]")
         console.print(f"[bold]🗣️ Citizen Inquiry ({item['lang']}):[/bold]")
@@ -564,9 +618,11 @@ async def run_vernacular_showcase():
         console.print("\n[bold yellow]Scripted example details:[/bold yellow]")
         console.print(f"  • [bold]Example language:[/bold] [green]{item['lang']}[/green]")
         console.print("  • [bold]Prewritten profile passed to the local rule engine:[/bold]")
-        for k, v in item["params"].items():
+        for k, v in tool_args.items():
             if k != "name":
                 console.print(f"      - {k}: [cyan]{v}[/cyan]")
+        if any(key in tool_sly_data for key in PRIVATE_PROFILE_KEYS):
+            console.print("      - private screening details: [dim]consented sample values, masked[/dim]")
 
         # Step 2: Deterministic Python Engine Execution
         with Progress(
@@ -575,7 +631,7 @@ async def run_vernacular_showcase():
             transient=True
         ) as progress:
             progress.add_task("calc", total=None)
-            calc_res = await engine.async_invoke(item["params"], item["sly_data"])
+            calc_res = await engine.async_invoke(tool_args, tool_sly_data)
 
         eligible_count = len(calc_res.get("eligible_schemes", []))
         console.print(f"  • [bold]Deterministic Python Engine Result:[/bold] [bold green]✓ {eligible_count} schemes screened as eligible under implemented rules[/bold green]")

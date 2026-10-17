@@ -16,8 +16,8 @@ class SchemeEligibilityEngine(CodedTool):
     """
     Screens citizen profiles against the Python eligibility rules implemented here.
     Deterministic output does not establish that a rule is current or complete.
-    Sensitive citizen data (income, social category, landholdings) is accepted either
-    via public args or out-of-band via sly_data; deployments must enforce the privacy boundary.
+    Sensitive citizen data is accepted only through sly_data; deployments must
+    ensure the client and runtime preserve that private channel.
     """
 
     def __init__(self, **kwargs: Any) -> None:
@@ -57,8 +57,6 @@ class SchemeEligibilityEngine(CodedTool):
             - age: Citizen age (integer).
             - gender: "male", "female", "other".
             - education_level: "class_8", "class_10", "class_12", "undergraduate", "engineering", etc.
-            - land_acres: Cultivable agricultural land in acres (float).
-            - is_taxpayer: Boolean whether citizen or parent pays income tax.
             - scheme_id: Optional scheme ID to check exclusively.
         :param sly_data: Privacy-preserving dictionary holding sensitive citizen parameters:
             - annual_income_inr: Family annual income in INR (keeps income out of LLM chat log).
@@ -71,6 +69,34 @@ class SchemeEligibilityEngine(CodedTool):
         # Never log profile values or even sensitive field names. Tool arguments may
         # contain citizen information even when the caller did not use sly_data.
         logger.info("Executing %s", tool_name)
+        private_argument_keys = {
+            "annual_income_inr", "income", "social_category", "category", "caste",
+            "land_acres", "is_taxpayer", "has_bank_account", "ration_card_tier", "aadhaar_seeded",
+        }
+        supplied_private_args = [
+            key for key in private_argument_keys
+            if args.get(key) is not None and args.get(key) != ""
+        ]
+        if supplied_private_args:
+            return {
+                "status": "PRIVATE_INPUT_REQUIRED",
+                "message": "Sensitive profile fields must be supplied through the private sly_data channel, not tool arguments.",
+                "fields_rejected": supplied_private_args,
+            }
+
+        private_sly_keys = {
+            "annual_income_inr", "social_category", "land_acres", "is_taxpayer",
+            "has_bank_account", "ration_card_tier", "aadhaar_seeded",
+        }
+        has_private_values = any(
+            sly_data.get(key) is not None and sly_data.get(key) != ""
+            for key in private_sly_keys
+        )
+        if has_private_values and sly_data.get("privacy_consent") is not True:
+            return {
+                "status": "CONSENT_REQUIRED",
+                "message": "The citizen must explicitly consent before private profile values are used for screening.",
+            }
         try:
             profile, missing_profile_fields = self._build_effective_profile(args, sly_data)
         except ValueError as exc:
@@ -107,12 +133,25 @@ class SchemeEligibilityEngine(CodedTool):
                     continue
 
             if sid not in self._supported_scheme_ids():
-                unsupported_schemes.append({"scheme_id": sid, "scheme_name": scheme.get("name"), "status": "RULES_NOT_IMPLEMENTED"})
+                unsupported_schemes.append({
+                    "scheme_id": sid,
+                    "scheme_name": scheme.get("name"),
+                    "status": "RULES_NOT_IMPLEMENTED",
+                    "source_urls": scheme.get("official_source_urls", []),
+                    "source_reviewed_as_of": self._registry_metadata.get("as_of"),
+                })
                 continue
             required = self._required_fields(sid)
             missing = [name for name in required if profile.get(name) is None]
             if missing:
-                needs_information.append({"scheme_id": sid, "scheme_name": scheme.get("name"), "status": "NEEDS_INFORMATION", "missing_fields": missing})
+                needs_information.append({
+                    "scheme_id": sid,
+                    "scheme_name": scheme.get("name"),
+                    "status": "NEEDS_INFORMATION",
+                    "missing_fields": missing,
+                    "source_urls": scheme.get("official_source_urls", []),
+                    "source_reviewed_as_of": self._registry_metadata.get("as_of"),
+                })
                 continue
 
             evaluation = self._evaluate_scheme(scheme, profile)
@@ -129,8 +168,10 @@ class SchemeEligibilityEngine(CodedTool):
                 "state": (profile.get("state") or "Not specified").replace("_", " ").title(),
                 "occupation": (profile.get("occupation") or "Not specified").title(),
                 "privacy_mode": (
-                    "sly_data supplied" if ("annual_income_inr" in sly_data or "social_category" in sly_data)
-                    else "sensitive fields supplied in args" if any(k in args for k in ("annual_income_inr", "income", "social_category", "category", "caste"))
+                    "sly_data supplied" if any(
+                        sly_data.get(key) is not None and sly_data.get(key) != ""
+                        for key in private_sly_keys
+                    )
                     else "no sensitive values supplied"
                 )
             },
@@ -535,6 +576,8 @@ class SchemeEligibilityEngine(CodedTool):
             "benefit": benefit_str,
             "portal_url": scheme.get("official_application_url"),
             "source_urls": scheme.get("official_source_urls", []),
+            "source_reviewed_as_of": self._registry_metadata.get("as_of"),
+            "verification_notes": scheme.get("verification_notes"),
             "application_status": scheme.get("application_status_as_of"),
             "documents_needed": scheme.get("documents_commonly_needed", []),
             "how_to_apply": scheme.get("how_to_apply", []),

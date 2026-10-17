@@ -23,7 +23,7 @@ Every year, the Central and State Governments of India allocate over **₹3,00,0
 
 Scheme Navigator is architected around the **Front Man Multi-Agent Pattern**, declaratively defined in HOCON (`registries/scheme_navigator.hocon`):
 
-* **CitizenConcierge (Front Man Agent)**: The intended Neuro-SAN public interface, configured to default to English and switch to Telugu, Hindi, Kannada, or Tamil only when explicitly requested. The local CLI does not invoke this agent network.
+* **CitizenConcierge (Front Man Agent)**: The Neuro-SAN public interface, configured to default to English and switch to Telugu, Hindi, Kannada, or Tamil only when explicitly requested. Run it with `python main.py --agent`; the local CLI remains a separate direct-tool demo.
 * **ScholarshipSpecialist (Subordinate Agent)**: Specialized in higher technical education, degree scholarships, and state fee reimbursement programs (Central Sector PM-USP CSSS, NMMSS, Top Class SC/ST, AP Jagananna Vidya & Vasathi Deevena, Karnataka SSP).
 * **FarmerWelfareSpecialist (Subordinate Agent)**: Dedicated to agricultural livelihood support, smallholder land categorization, and statutory exclusions (PM-KISAN, PMFBY Crop Insurance, Kisan Credit Cards, PMKSY Micro-Irrigation, PM-KMY Pension, Rythu Bharosa).
 * **VerificationAuditorAgent (Subordinate Agent)**: Conducts adversarial checking and transparent **"Why Not Eligible"** root-cause audits, pinpointing exact unmet criteria and recommending alternative qualified schemes.
@@ -32,7 +32,7 @@ Scheme Navigator is architected around the **Front Man Multi-Agent Pattern**, de
   * `LiveSchemeFetcher`: Checks reachability of official `.gov.in`/`.nic.in` portals, enforces HTTPS domain checks for fetches, and can parse fetched PDF or HTML text. A reachability check does not retrieve announcements; configured portal guidance is static.
   * `DocumentChecklistGenerator`: Maps scheme requirements to localized issuing authorities (*Nadakacheri, MeeSeva, e-Sevai, DigiLocker, UIDAI*).
   * `ApplicationGuide`: Provides step-by-step portal navigation, Aadhaar-NPCI DBT seeding instructions, and anti-bribe warnings.
-* **Sensitive data handling (`sly_data`)**: The coded tool accepts values through `sly_data` and omits income and category from its result. Private routing and model/log isolation depend on host configuration; the local CLI does not provide that isolation.
+* **Sensitive data handling (`sly_data`)**: The front-man schema offers income, category, land, and taxpayer fields through the private channel. The eligibility tool requires consent and rejects these values in normal tool arguments. The CLI asks before screening and masks values in its output; production isolation still depends on the runtime and client configuration.
 
 ---
 
@@ -52,8 +52,8 @@ Scheme Navigator is architected around the **Front Man Multi-Agent Pattern**, de
 ### 4. Technical Implementation & Verification Metrics
 
 * **Automated Test Suite**: Automated unit tests are included; run them for current results. (`tests/test_eligibility.py` and `tests/test_live_fetcher.py`) verifying deterministic calculations, income edge cases, taxpayer exclusions, `sly_data` vaulting, portal reachability behavior, URL allowlisting, and PDF guideline ingestion.
-* **Interactive Terminal CLI (`demo_cli.py`)**: A local deterministic demo featuring 4 scripted citizen personas, custom profiling, portal reachability checks, and scripted language examples. It calls Python tools directly and does not run LLM or Neuro-SAN agents.
-* **Neuro-SAN registry**: HOCON describes the intended agent network; `main.py` launches the CLI and does not start an `nsflow` web UI.
+* **Interactive Terminal CLI (`demo_cli.py`)**: A local deterministic demo featuring 4 scripted citizen personas, consented custom profiling, portal reachability checks, and scripted language examples. It calls Python tools directly and does not run LLM or Neuro-SAN agents.
+* **Neuro-SAN runtime**: `python main.py --agent` launches the HOCON agent network and `nsflow` using the focused Scheme Navigator manifest.
 * **Resilience & Dual-Tier Fallback**: Primary Google Gemini 3.1 Flash-Lite backed by automatic zero-retry failover to OpenRouter NVIDIA Nemotron 3.5 Lightning.
 
 ---
@@ -64,7 +64,7 @@ Scheme Navigator is architected around the **Front Man Multi-Agent Pattern**, de
 |---|---|---|
 | **Problem Relevance** | 20% | Directly targets India's **₹1,00,000 Crore unclaimed citizen benefits crisis**, empowering marginalized students and smallholder farmers. |
 | **Innovation** | 20% | Blends **deterministic Python statutory verification** (rule-based checks for implemented criteria) with **out-of-band `sly_data` privacy** and **live `.gov.in` portal sync**. |
-| **Effective Use of Neuro-SAN** | 20% | Includes a HOCON agent registry; `main.py` launches the CLI, and no `nsflow` web UI is launched by this entry point. |
+| **Effective Use of Neuro-SAN** | 20% | Includes a HOCON agent registry and a `main.py --agent` launch path for the focused `nsflow` demo. |
 | **Technical Implementation** | 15% | automated tests (run locally for current results), portal reachability checks wrapped for async callers, on-the-fly PDF parsing, and clean modular code architecture. |
 | **Impact & Scalability** | 15% | Scheme metadata can be added to `data/schemes_db.json`; eligibility behavior requires a supported Python rule implementation. Future integrations could include with national voice/telephony APIs (Bhashini / Twilio). |
 | **Presentation & UX** | 10% | Rich terminal demo with scripted examples in four Indic languages, English-default concierge instructions in the registry, and submission documentation. |

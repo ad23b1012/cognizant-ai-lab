@@ -31,7 +31,7 @@ In India, central and state governments allocate over **₹3,00,000 Crore annual
 
 ## 🏛️ System Architecture
 
-The HOCON registry describes a hierarchical Neuro-SAN agent network. The current `main.py` entry point runs a local CLI that calls Python tools directly; it does not start that agent network:
+The HOCON registry defines a hierarchical Neuro-SAN agent network. `main.py` supports both the local CLI and a live Neuro-SAN/`nsflow` session:
 
 ```
                             ┌────────────────────────────────────────┐
@@ -209,6 +209,18 @@ python main.py
 python demo_cli.py
 ```
 
+### Live Neuro-SAN Agent Network
+
+Set `GOOGLE_API_KEY` in `.env`, then launch the Scheme Navigator agent network and `nsflow` UI:
+
+```bash
+python main.py --agent
+# or
+uv run python main.py --agent
+```
+
+The dedicated manifest exposes Scheme Navigator without the unrelated example networks in the general development manifest. In `nsflow`, choose **scheme_navigator**. The concierge declares private profile fields through `sly_data_schema`; supported clients can collect these separately from chat. The eligibility tool requires explicit `privacy_consent` and rejects sensitive values passed in ordinary tool arguments.
+
 **7 Illustrative Demo Scenarios:**
 
 The persona results below are generated from this prototype's implemented rules. They are screening examples, not official eligibility decisions.
@@ -224,13 +236,13 @@ The persona results below are generated from this prototype's implemented rules.
 
 ### Neuro-SAN registry
 
-`registries/scheme_navigator.hocon` describes an agent network, but [main.py](main.py) currently launches the terminal CLI. A running Neuro-SAN/`nsflow` web session is not started by this entry point; configure and launch that runtime separately using its deployment instructions.
+`registries/scheme_navigator.hocon` defines the live network. Use `python main.py --agent` to launch it with the dedicated `registries/scheme_navigator_manifest.hocon`; `python main.py` continues to launch the local terminal demo.
 
 Eligibility conditions are implemented in Python for the supported scheme IDs. Adding a record to `data/schemes_db.json` alone does not add eligibility logic; unsupported IDs are reported without an eligibility decision. Portal ping results establish reachability only, and the returned static guidance is not a live announcement feed. The registry snapshot date and official source URLs are shown with screening results when available.
 
 The demo is not production-ready. Treat its rule output as preliminary screening, confirm scheme criteria and dates with the linked authority, and configure the deployment to keep sensitive profile values out of model-visible prompts.
 
-No web UI launch command is provided by this repository's `main.py` entry point.
+The local CLI asks for consent before requesting a custom profile, masks sensitive values in its summary, and keeps those values in memory for the local screening workflow. In the live agent UI, private values should be supplied only through the client’s private `sly_data` fields. Do not enter identity numbers.
 
 ## 📁 Repository Structure
 
@@ -239,7 +251,7 @@ cognizant-ai-lab/
 ├── architecture.md                      # 🧱 Complete Multi-Agent Architecture & Sequence Diagrams
 ├── summary.md                           # 📄 2-Page Executive Project Summary for Hackathon
 ├── README.md                            # 🚀 Setup, Quickstart & Evaluation Guide
-├── main.py                              # 🎮 Main application entrypoint
+├── main.py                              # 🎮 CLI and Neuro-SAN runtime entrypoint
 ├── demo_cli.py                          # 🖥️ Interactive visual terminal console (7 scenarios)
 ├── requirements.txt                     # 📦 Pinned Python dependencies
 ├── pyproject.toml                       # ⚙️ Project build metadata
@@ -258,7 +270,8 @@ cognizant-ai-lab/
 ├── data/
 │   └── schemes_db.json                  # Official verified schemes database (Central, AP, KA)
 ├── registries/
-│   ├── manifest.hocon                   # Agent network registry manifest
+│   ├── manifest.hocon                   # Development manifest
+│   ├── scheme_navigator_manifest.hocon  # Focused hackathon demo manifest
 │   ├── scheme_navigator.hocon           # Multi-agent graph specification (Front Man + Specialists)
 │   └── expertise_scoping_instructions.hocon # Guardrail and scoping prompt templates
 └── tests/
@@ -274,7 +287,7 @@ cognizant-ai-lab/
 |---|---|---|
 | **Problem Relevance** | 20% | Directly addresses India's **₹1,00,000 Crore unclaimed benefits crisis** by providing an accessible, transparent, and empathetic bridge for students and farmers. |
 | **Innovation** | 20% | Combines Python rule checks for implemented criteria, configurable `sly_data` handling, and government portal reachability checks. |
-| **Effective Use of Neuro-SAN** | 20% | Implements a complete **Front Man architecture** with specialized sub-agents (`ScholarshipSpecialist`, `FarmerWelfareSpecialist`), deterministic `CodedTools`, clean HOCON configs, and agent network configuration in HOCON; `main.py` currently starts the CLI. |
+| **Effective Use of Neuro-SAN** | 20% | Includes a **Front Man architecture** with specialized sub-agents (`ScholarshipSpecialist`, `FarmerWelfareSpecialist`), deterministic `CodedTools`, HOCON configuration, and a focused agent launch path via `python main.py --agent`. |
 | **Technical Implementation** | 15% | automated tests for the current prototype, a Rich interactive CLI, and threaded network requests exposed through async tools. |
 | **Impact Potential & Scalability** | 15% | The registry is structured for metadata additions; every new scheme also needs reviewed eligibility logic and tests. |
 | **Presentation & User Experience** | 10% | Rich terminal panels, scripted examples in four Indic languages, English-default concierge instructions in the registry, and submission materials. |
