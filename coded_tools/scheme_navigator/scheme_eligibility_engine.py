@@ -1,6 +1,6 @@
 # Copyright © 2025-2026 Cognizant Technology Solutions Corp, www.cognizant.com.
 # Scheme Navigator - Deterministic Welfare Eligibility Engine
-# Built against official Government of India verified schema in data/schemes_db.json
+# Uses curated scheme metadata plus separately implemented Python rules.
 
 from logging import Logger, getLogger
 import json
@@ -14,7 +14,8 @@ from neuro_san.interfaces.coded_tool import CodedTool
 
 class SchemeEligibilityEngine(CodedTool):
     """
-    Evaluates citizen profiles against official government rules deterministically.
+    Screens citizen profiles against the Python eligibility rules implemented here.
+    Deterministic output does not establish that a rule is current or complete.
     Sensitive citizen data (income, social category, landholdings) is accepted either
     via public args or out-of-band via sly_data; deployments must enforce the privacy boundary.
     """
@@ -22,6 +23,7 @@ class SchemeEligibilityEngine(CodedTool):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self._db_path = self._locate_db()
+        self._registry_metadata: Dict[str, Any] = {}
         self._schemes: List[Dict[str, Any]] = self._load_schemes()
 
     def _locate_db(self) -> Path:
@@ -40,6 +42,7 @@ class SchemeEligibilityEngine(CodedTool):
         if self._db_path.exists():
             with open(self._db_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
+                self._registry_metadata = data.get("metadata", {})
                 return data.get("schemes", [])
         return []
 
@@ -120,6 +123,8 @@ class SchemeEligibilityEngine(CodedTool):
 
         result = {
             "status": "NEEDS_INFORMATION" if needs_information and not eligible_schemes and not ineligible_schemes else "SUCCESS",
+            "registry_as_of": self._registry_metadata.get("as_of"),
+            "registry_verification_policy": self._registry_metadata.get("verification_policy"),
             "citizen_summary": {
                 "state": (profile.get("state") or "Not specified").replace("_", " ").title(),
                 "occupation": (profile.get("occupation") or "Not specified").title(),

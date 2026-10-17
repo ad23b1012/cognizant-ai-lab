@@ -1,11 +1,11 @@
 # 🇮🇳 Scheme Navigator (YojanaMitra AI)
-### Autonomous Multi-Agent Welfare & Scholarship Concierge for Indian Citizens
+### Welfare & Scholarship Screening Assistant for Indian Citizens
 **Cognizant AI Lab × Indian Institute of Information Technology Raichur — Agentic AI Hackathon (October 2026)**
 
 [![Neuro-SAN Studio](https://img.shields.io/badge/Framework-Neuro--SAN%20Studio-blue.svg)](https://github.com/cognizant-ai-lab/neuro-san-studio)
 [![LLM](https://img.shields.io/badge/LLM-Google%20Gemini%203.1%20Flash--Lite%20%2B%20OpenRouter-orange.svg)](https://ai.google.dev/)
-[![Unit Tests](https://img.shields.io/badge/Automated%20Tests-13%2F13%20Passing-brightgreen.svg)]()
-[![Live Sync](https://img.shields.io/badge/Live%20Sync-.gov.in%20Verified%20%2B%20PDF%20Gazette%20Reader-teal.svg)]()
+[![Unit Tests](https://img.shields.io/badge/Automated%20Tests-Included-blue.svg)]()
+[![Portal Checks](https://img.shields.io/badge/Portal%20Checks-Reachability%20Only-teal.svg)]()
 [![Privacy](https://img.shields.io/badge/Privacy-configurable%20sly__data-purple.svg)]()
 [![Theme](https://img.shields.io/badge/Theme-AI%20for%20Social%20Good-success.svg)]()
 
@@ -31,7 +31,7 @@ In India, central and state governments allocate over **₹3,00,000 Crore annual
 
 ## 🏛️ System Architecture
 
-The system implements a true hierarchical multi-agent network orchestrated via Neuro-SAN HOCON specifications:
+The HOCON registry describes a hierarchical Neuro-SAN agent network. The current `main.py` entry point runs a local CLI that calls Python tools directly; it does not start that agent network:
 
 ```
                             ┌────────────────────────────────────────┐
@@ -62,7 +62,7 @@ The system implements a true hierarchical multi-agent network orchestrated via N
        │  1. LiveSchemeFetcher                                         │
        │     - Live official portal ping (AP JnanaBhumi, NSP, PM-KISAN)│
        │     - Anti-phishing domain defense (strictly .gov.in/.nic.in) │
-       │     - On-the-fly statutory PDF gazette guideline parser       │
+       │     - Optional PDF/HTML text parser (fetch action)              │
        │                                                               │
        │  2. SchemeEligibilityEngine                                   │
        │     - Python rule checks for implemented schemes │
@@ -78,7 +78,7 @@ The system implements a true hierarchical multi-agent network orchestrated via N
        =================================================================
                                     │
                                     ▼
-       =================== ZERO-LEAKAGE PRIVACY ========================
+       ========== OPTIONAL HOST-CONFIGURED PRIVATE DATA =================
        │  Optional host-configured private fields (`sly_data`):                           │
        │  • Annual Family Income (INR)   • Caste / Social Category     │
        │  • Ration Card Tier             • Aadhaar DBT Status          │
@@ -95,9 +95,9 @@ The system implements a true hierarchical multi-agent network orchestrated via N
 | Innovation | Traditional AI Assistants | Scheme Navigator (YojanaMitra AI) |
 |---|---|---|
 | **Rule-Based Screening** | May rely on generated answers for criteria. | Deterministic Python checks for the implemented schemes; rules need ongoing official-source review and confirmation. |
-| **Live Portal Sync & PDF Reader** | Rely on stale static data or output dead/phishing links. | **`LiveSchemeFetcher`**: Pings live `.gov.in`/`.nic.in` portals in real-time and parses official PDF gazette guidelines on-the-fly (`pypdf`). |
+| **Portal Reachability & Source Checks** | May output broken or phishing links. | **`LiveSchemeFetcher`**: Checks reachability of configured `.gov.in`/`.nic.in` sites, validates HTTPS government domains for fetches, and can parse fetched PDF/HTML text. Reachability does not verify announcements or rules. |
 | **Sensitive Citizen Privacy** | Privacy depends on application design and deployment. | The coded tool can read sensitive values from `sly_data` and omits income/category from its result; deployment must ensure those values are routed privately. |
-| **Native Indic Multilingual Support** | English-only interfaces that alienate rural citizens. | Native conversational fluency in **Telugu (తెలుగు)**, **Hindi (हिंदी)**, **Kannada (ಕನ್ನಡ)**, and **Tamil (தமிழ்)** with automatic intent extraction. |
+| **Language Support** | Often requires English-only input. | The concierge prompt defaults to English and supports Telugu, Hindi, Kannada, and Tamil when explicitly requested. The local CLI language showcase uses scripted examples; it does not run an LLM conversation. |
 | **Transparent Rejection Audit** | Gives generic "You are not eligible" responses. | Generates a clause-by-clause **"Why am I not eligible" audit trail** detailing exact unmet criteria and recommending alternative schemes. |
 | **Hyper-Local State Schemes** | Generic national demos that ignore regional programs. | Tailored to **Andhra Pradesh** (*Jagananna Vidya & Vasathi Deevena*, *Rythu Bharosa*), **Karnataka** (*SSP Post-Matric*, *Raitha Siri*), and **Central NSP**. |
 | **Anti-Middleman Citizen Defense** | Leaves citizens vulnerable to fraudulent agents. | Direct `.gov.in` URLs, official grievance helplines, issuing authorities (*MeeSeva*, *Nadakacheri*, *Sachivalayam*), and anti-bribe warnings. |
@@ -217,8 +217,8 @@ The persona results below are generated from this prototype's implemented rules.
 3. **👩‍🎓 Scenario 3: Higher Technical Scholar**: ST Category student (B.Tech, Income ₹3.8L) $\rightarrow$ Screens as eligible for EDU-001 (PM-USP) and EDU-004 (Top Class ST).
 4. **🔍 Scenario 4: Transparent Rejection Audit**: Landholder applicant (Taxpayer case) $\rightarrow$ Demonstrates the configured taxpayer exclusion rule and possible alternatives.
 5. **✍️ Scenario 5: Custom Interactive Profile**: Enter any custom profile values (State, Course, Income, Quota) and receive a rule-based screening result.
-6. **🌐 Scenario 6: Live Official Portal Monitor & PDF Guideline Inspector**: Government portal reachability check (`.gov.in` / `.nic.in`), anti-phishing defense test, and statutory PDF gazette extractor.
-7. **🗣️ Scenario 7: Multilingual Native Language Assistant**: Dedicated native showcase for **Telugu (తెలుగు)**, **Hindi (हिंदी)**, **Kannada (ಕನ್ನಡ)**, and **Tamil (தமிழ்)** with language examples (intent extraction is handled by the configured model).
+6. **🌐 Scenario 6: Portal monitor and parser demo**: Government portal reachability checks (`.gov.in` / `.nic.in`), an anti-phishing domain check, and a parser demonstration using clearly labeled sample text (not a live gazette).
+7. **🗣️ Scenario 7: Multilingual examples**: A scripted showcase for **Telugu (తెలుగు)**, **Hindi (हिंदी)**, **Kannada (ಕನ್ನಡ)**, and **Tamil (தமிழ்)**. It displays example intent/response pairs and does not perform live language understanding or generation.
 
 ---
 
@@ -226,7 +226,7 @@ The persona results below are generated from this prototype's implemented rules.
 
 `registries/scheme_navigator.hocon` describes an agent network, but [main.py](main.py) currently launches the terminal CLI. A running Neuro-SAN/`nsflow` web session is not started by this entry point; configure and launch that runtime separately using its deployment instructions.
 
-Eligibility conditions are implemented in Python for the supported scheme IDs. Adding a record to `data/schemes_db.json` alone does not add eligibility logic; unsupported IDs are reported without an eligibility decision. Portal ping results establish reachability only, and the returned static guidance is not a live announcement feed.
+Eligibility conditions are implemented in Python for the supported scheme IDs. Adding a record to `data/schemes_db.json` alone does not add eligibility logic; unsupported IDs are reported without an eligibility decision. Portal ping results establish reachability only, and the returned static guidance is not a live announcement feed. The registry snapshot date and official source URLs are shown with screening results when available.
 
 The demo is not production-ready. Treat its rule output as preliminary screening, confirm scheme criteria and dates with the linked authority, and configure the deployment to keep sensitive profile values out of model-visible prompts.
 
@@ -245,10 +245,10 @@ cognizant-ai-lab/
 ├── pyproject.toml                       # ⚙️ Project build metadata
 ├── .env.example                         # 🔑 Template for environment variables
 ├── .gitignore                           # 🛡️ Git exclusion rules
-├── coded_tools/                         # 🐍 Deterministic Python CodedTools (0% Hallucination)
+├── coded_tools/                         # 🐍 Deterministic Python coded tools for implemented rules
 │   ├── scheme_navigator/
 │   │   ├── scheme_eligibility_engine.py # Deterministic statutory rule validation engine
-│   │   ├── live_scheme_fetcher.py       # Live .gov.in portal pinger & PDF gazette extractor
+│   │   ├── live_scheme_fetcher.py       # Portal reachability, allowlisting & PDF/HTML parser
 │   │   ├── document_checklist_generator.py # State issuing authority checklist generator
 │   │   ├── application_guide.py         # Step-by-step portal roadmap & Sachivalayam e-KYC
 │   │   └── __init__.py                  # Package exports
@@ -277,7 +277,7 @@ cognizant-ai-lab/
 | **Effective Use of Neuro-SAN** | 20% | Implements a complete **Front Man architecture** with specialized sub-agents (`ScholarshipSpecialist`, `FarmerWelfareSpecialist`), deterministic `CodedTools`, clean HOCON configs, and agent network configuration in HOCON; `main.py` currently starts the CLI. |
 | **Technical Implementation** | 15% | automated tests for the current prototype, a Rich interactive CLI, and threaded network requests exposed through async tools. |
 | **Impact Potential & Scalability** | 15% | The registry is structured for metadata additions; every new scheme also needs reviewed eligibility logic and tests. |
-| **Presentation & User Experience** | 10% | Native Indic multilingual fluency in Telugu, Hindi, Kannada, Tamil, and English; Rich terminal panels; complete 2-minute demo video script; and intuitive visual flow graphs. |
+| **Presentation & User Experience** | 10% | Rich terminal panels, scripted examples in four Indic languages, English-default concierge instructions in the registry, and submission materials. |
 
 ---
 
