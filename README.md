@@ -219,7 +219,9 @@ python main.py --agent
 uv run python main.py --agent
 ```
 
-The dedicated manifest exposes Scheme Navigator without the unrelated example networks in the general development manifest. In `nsflow`, choose **scheme_navigator**. The concierge declares private profile fields through `sly_data_schema`; supported clients can collect these separately from chat. The eligibility tool requires explicit `privacy_consent` and rejects sensitive values passed in ordinary tool arguments.
+The dedicated manifest exposes Scheme Navigator without the unrelated example networks in the general development manifest. In `nsflow`, choose **scheme_navigator**. When eligibility checks report missing information, the concierge should ask one short follow-up at a time, offer numbered choices and **Other (please specify)**, then retry after your answer. It should offer **I don't know / Skip** when appropriate. Income, social category, landholding, and tax status must be collected only through a client-supported private `sly_data` field after consent; do not type them into chat. If the client has no private fields, dependent criteria cannot be checked in that session.
+
+The network also sends specialist screening results through an independent auditor review. For supported ineligible schemes, `analyze_eligibility_gaps` simulates one numeric criterion change at a time with the existing rule engine and shows any remaining failures; it never recommends changing official records. When you are preparing an application, `check_application_readiness` asks applicable yes/no/not-sure questions about name matching, DBT, certificates, and institution verification, then returns practical fixes. These checks are guidance, not guarantees of eligibility or acceptance.
 
 **7 Illustrative Demo Scenarios:**
 

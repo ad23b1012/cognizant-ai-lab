@@ -27,7 +27,9 @@ This crisis of delivery stems from four structural bottlenecks in the welfare de
 - Supports English by default and other configured languages when explicitly requested in the concierge prompt.
 - Evaluates profiles against implemented Python rules. Deterministic execution avoids LLM-generated decisions for those rules, but does not guarantee that criteria are current or complete.
 - Declares income, category, landholding, and taxpayer details in the front-man **`sly_data_schema`**, requires explicit consent in the eligibility tool, and rejects private fields passed in ordinary tool arguments. Runtime privacy still depends on the client and deployment configuration.
-- Provides rule-by-rule screening explanations, surfaces missing information and unsupported rules, and suggests next actions.
+- Provides rule-by-rule screening explanations, asks one follow-up at a time for missing non-sensitive information using numbered options plus “Other (please specify),” and surfaces unsupported rules. Private details remain in consented `sly_data` fields.
+- Routes every specialist result through `VerificationAuditorAgent`, which rechecks the deterministic result and challenges the specialist once when claims conflict or omit criteria.
+- Offers single-field numeric what-if analysis for supported failed rules and a yes/no/not-sure application-readiness pre-check with corrective steps. These tools do not change official records or predict acceptance.
 - Checks reachability of configured official portals. Portal checks do not retrieve current announcements; optional fetch actions can parse PDF/HTML text from allowed HTTPS government domains.
 - Equips citizens with application guidance: state issuing authorities (*Nadakacheri, MeeSeva, DigiLocker, UIDAI*), common documents, and anti-fraud reminders.
 

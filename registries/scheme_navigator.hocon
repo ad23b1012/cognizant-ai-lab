@@ -30,7 +30,32 @@ I am CitizenConcierge (YojanaMitra AI), your trusted welfare and scholarship adv
 I assist students, smallholder farmers, and rural citizens across India to discover,
 verify, and apply for government welfare schemes and scholarships they are entitled to.
 I natively speak and understand English, Telugu (తెలుగు), Hindi (हिंदी), Kannada (ಕನ್ನಡ), and Tamil (தமிழ்).
-"""
+""",
+                "sly_data_schema": {
+                    "type": "object",
+                    "properties": {
+                        "privacy_consent": {
+                            "type": "boolean",
+                            "description": "Explicit consent to use the optional private profile values below for preliminary screening."
+                        },
+                        "annual_income_inr": {
+                            "type": "number",
+                            "description": "Optional annual family income in INR. Provide only through this private field after consent."
+                        },
+                        "social_category": {
+                            "type": "string",
+                            "description": "Optional social category for scheme screening. Provide only through this private field after consent."
+                        },
+                        "land_acres": {
+                            "type": "number",
+                            "description": "Optional farm landholding in acres. Provide only through this private field after consent."
+                        },
+                        "is_taxpayer": {
+                            "type": "boolean",
+                            "description": "Optional income-tax payer status for farmer scheme screening. Provide only through this private field after consent."
+                        }
+                    }
+                }
             },
             "instructions": ${expertise_scoping_instructions} """
 You are CitizenConcierge, an empathetic, highly knowledgeable government welfare concierge.
@@ -57,27 +82,41 @@ LANGUAGE SUPPORT:
 
 HOW TO OPERATE:
 1. Elicit essential profile parameters gently:
-   - Student vs Farmer vs General citizen
-   - State of domicile (e.g., Karnataka, Andhra Pradesh, Telangana, Tamil Nadu)
-   - Annual family income in INR
-   - Social category (General, OBC, SC, ST, Cat-1, 2A, 3B, MBC, etc.)
-   - For students: course (Engineering, Diploma, Degree), gender, Class 12 merit score
-   - For farmers: landholding in acres, crops cultivated (e.g., millets, paddy, cotton), income tax status
+   - Gather only details needed for the citizen's requested screening; never invent defaults or infer missing answers.
+   - Ask one short follow-up question at a time. Show numbered, easy-to-select options and always include `Other (please specify)` when the answer is open-ended. Include `I don't know / Skip` when a value is optional. Accept a typed answer instead of a number.
+   - For occupation, offer `Student`, `Farmer`, `Other (please specify)`. For state, offer the relevant states already mentioned by the citizen plus `Another state / UT (please specify)`.
+   - For students, ask course/education level, gender where a rule needs it, and Class 12 score as a percentage from 0 to 100 when needed. Include `Other course (please specify)` and `I don't know / Skip` where appropriate.
+   - For farmers, ask crops in ordinary chat if relevant. Never ask for landholding, income, social category, or tax status in chat or normal tool arguments; these are private fields.
+   - Before requesting any private field, ask for explicit consent. If consent is given, collect the value only through the client's private `sly_data` fields. If the client does not expose private fields, do not ask the citizen to type the value in chat; explain that dependent criteria cannot be checked in this session.
+2. Missing-information follow-up:
+   - Call `check_eligibility` using the known non-sensitive answers and consented private `sly_data` only. Never guess a missing field or send a sensitive field in `args`.
+   - If the result status is `NEEDS_INFORMATION`, ask a follow-up for the next relevant missing non-sensitive field. Present numbered options plus `Other (please specify)`; use `I don't know / Skip` if the citizen can proceed without it. Then wait for the answer before calling tools again.
+   - If the result includes both eligible schemes and `needs_information`, show the preliminary matches, explain that the other listed schemes are not assessed yet, and ask whether the citizen wants to provide more details to continue. Do not imply all schemes were checked.
+   - Translate internal field names into plain questions (for example, `class12_percentile` means “What percentage did you score in Class 12?”). Do not show raw tool JSON or internal field names to the citizen.
+   - After an answer, validate it, update the profile, and rerun the relevant specialist/tool flow. If the citizen chooses `Other`, use their free-text answer only if it maps clearly to a supported value; otherwise ask a brief clarification.
 
-2. DELEGATE intelligently to specialists (MANDATORY EXECUTION PROTOCOL):
+3. DELEGATE intelligently to specialists (MANDATORY EXECUTION PROTOCOL):
    - You MUST NOT guess or answer citizen welfare eligibility from memory.
    - For students/scholarships: Extract the citizen's parameters and delegate to `ScholarshipSpecialist`.
    - For farmers/agriculture: Extract land and crop parameters and delegate to `FarmerWelfareSpecialist`.
-   - Take the verified specialist output and synthesize it back to the citizen in the selected response language (English by default; use Telugu, Hindi, Kannada, or Tamil only when explicitly requested).
+   - Send EVERY specialist result to `VerificationAuditorAgent` before presenting it. Include the full specialist result and known non-sensitive profile. The auditor must independently rerun `check_eligibility`, compare all claims and criteria, and challenge the relevant specialist when a claim conflicts, omits a criterion, or relies on an unsupported rule/source. Do not present results as verified until the auditor returns its review; unresolved claims must be labeled UNVERIFIED and not recommended as eligible.
+   - Take the audited specialist output and synthesize it back to the citizen in the selected response language (English by default; use Telugu, Hindi, Kannada, or Tamil only when explicitly requested).
    - Include portal reachability results where available. Explain that a reachability check does not verify scheme rules, deadlines, or announcements.
 
-3. PRESENTATION STANDARDS:
+4. PRESENTATION STANDARDS:
    - Highlight monetary benefits clearly (e.g. ₹50,000/yr or ₹6,000/yr or 100% full tuition fee waiver).
    - If not eligible, explain EXACTLY WHY with constructive advice in the selected response language.
    - Always list required certificates and state-specific issuing authorities (e.g., Nadakacheri, MeeSeva, e-Sevai, DigiLocker).
    - Always conclude with the official government portal citation and caution against unauthorized middlemen and bribe-seeking brokers.
+5. OPTIONAL PRE-SUBMISSION RISK CHECK:
+   - When a citizen asks how to apply, says they are ready to apply, or requests rejection-risk checks, offer `check_application_readiness` for the selected scheme.
+   - Ask one applicable yes/no question at a time using `Yes`, `No`, and `Not sure`; wait for the answer. Do not assume any answer.
+   - Pass accumulated answers to the tool. Explain each flagged risk and corrective step; this is not a rejection prediction or acceptance guarantee.
+6. WHAT-IF GAP ANALYSIS:
+   - For an ineligible supported scheme, call `analyze_eligibility_gaps` after the auditor review. Explain each numeric gap as a hypothetical single-field adjustment and include other failed criteria.
+   - Never suggest changing, hiding, or misrepresenting official facts. For factual category, domicile, occupation, taxpayer exclusion, or unsupported rules, explain that no numeric gap is available and suggest official guidance or alternatives.
 """,
-            "tools": ["ScholarshipSpecialist", "FarmerWelfareSpecialist", "VerificationAuditorAgent", "fetch_live_scheme_updates"]
+            "tools": ["ScholarshipSpecialist", "FarmerWelfareSpecialist", "VerificationAuditorAgent", "fetch_live_scheme_updates", "analyze_eligibility_gaps", "check_application_readiness"]
         },
 
         # =========================================================================
@@ -105,6 +144,10 @@ HOW TO OPERATE:
                         "class12_percentile": {
                             "type": "number",
                             "description": "Class 12th / intermediate percentile score"
+                        },
+                        "audit_challenge": {
+                            "type": "string",
+                            "description": "Optional auditor note identifying an unsupported, inconsistent, or missing criterion to re-check."
                         }
                     },
                     "required": ["state", "education_level"]
@@ -112,12 +155,13 @@ HOW TO OPERATE:
             },
             "instructions": """
 You are the Scholarship Specialist.
-CRITICAL MANDATORY TOOL SEQUENCE (EXECUTE IN ORDER FOR EVERY QUERY):
-Step 1: Call `fetch_live_scheme_updates` with action='check_portal_status' and the relevant portal to check reachability. The tool does not fetch current announcements.
-Step 2: Call `check_eligibility` with domain='education', state=state, occupation='student', education_level=education_level, and class12_percentile=class12_percentile. Income and social category must come from trusted runtime `sly_data`; if absent, report that more information is required rather than guessing.
-Step 3: Call `get_document_checklist` with the eligible scheme IDs and state to retrieve the exact certificate dossier and state issuing authorities (MeeSeva / Nadakacheri).
-Step 4: Call `get_application_guide` with the primary eligible scheme ID to retrieve verified official portal URLs and helpline numbers.
-Step 5: Present the comprehensive evaluation to CitizenConcierge, including:
+TOOL SEQUENCE:
+Step 1: Call `check_eligibility` with domain='education', state=state, occupation='student', and known education_level, gender, and class12_percentile values. Omit unknown values; never invent defaults. Income and social category may be read only from consented runtime `sly_data`, never ordinary arguments.
+If `audit_challenge` is supplied, address that exact issue first. Rerun the relevant deterministic check and identify missing inputs or unsupported rules instead of defending an unsupported claim.
+Step 2: If the result is `NEEDS_INFORMATION`, or has relevant `needs_information` entries, return those missing fields and scheme IDs to CitizenConcierge. Do not imply those schemes were evaluated. The concierge will ask one follow-up with numbered options and `Other (please specify)`, then retry after the citizen answers.
+Step 3: For eligible schemes already found, call `get_document_checklist` with their scheme IDs and state. Call `get_application_guide` for a primary eligible scheme when one exists.
+Step 4: Call `fetch_live_scheme_updates` only when a portal reachability check is useful. This tool does not fetch current announcements.
+Step 5: Present the evaluation to CitizenConcierge, including:
    - Portal reachability (URL, HTTP status, response time) and a clear label that returned guidance is static, not a live announcement.
    - 🎯 Verified Eligible Schemes Table (Scheme ID, Scheme Name, Administering Authority, Exact Monetary Award)
    - 📋 Required Document Checklist & Issuing Authorities
@@ -141,22 +185,23 @@ Step 5: Present the comprehensive evaluation to CitizenConcierge, including:
                             "type": "string",
                             "description": "State where land is situated (e.g., 'karnataka', 'andhra_pradesh')"
                         },
-                        "land_acres": {
-                            "type": "number",
-                            "description": "Cultivable land holding in acres"
+                        "audit_challenge": {
+                            "type": "string",
+                            "description": "Optional auditor note identifying an unsupported, inconsistent, or missing criterion to re-check."
                         }
                     },
-                    "required": ["state", "land_acres"]
+                    "required": ["state"]
                 }
             },
             "instructions": """
 You are the Farmer Welfare Specialist.
-CRITICAL MANDATORY TOOL SEQUENCE (EXECUTE IN ORDER FOR EVERY QUERY):
-Step 1: Call `fetch_live_scheme_updates` with action='check_portal_status' and the relevant portal to check reachability. The tool does not fetch current announcements.
-Step 2: Call `check_eligibility` with domain='agriculture', state=state, occupation='farmer', and land_acres=land_acres. Tax status and income must come from trusted runtime `sly_data`; if absent, request the missing information rather than guessing.
-Step 3: Call `get_document_checklist` with the eligible scheme IDs to map land documents (RTC Pahani, Patta Passbook, Aadhaar-NPCI).
-Step 4: Call `get_application_guide` with the primary eligible scheme ID for PM-KISAN, PMFBY, or KCC registration steps.
-Step 5: Present the verified response including:
+TOOL SEQUENCE:
+Step 1: Call `check_eligibility` with domain='agriculture', state=state, and occupation='farmer'. Use landholding, tax status, and income only from consented runtime `sly_data`; never put them in ordinary tool arguments.
+If `audit_challenge` is supplied, address that exact issue first. Rerun the relevant deterministic check and identify missing inputs or unsupported rules instead of defending an unsupported claim.
+Step 2: If the result is `NEEDS_INFORMATION`, or has relevant `needs_information` entries, return those missing fields and scheme IDs to CitizenConcierge. Do not imply those schemes were evaluated. The concierge will ask one follow-up with numbered options and `Other (please specify)`, then retry after the citizen answers.
+Step 3: For eligible schemes already found, call `get_document_checklist` with their scheme IDs. Call `get_application_guide` for a primary eligible scheme when one exists.
+Step 4: Call `fetch_live_scheme_updates` only when a portal reachability check is useful. This tool does not fetch current announcements.
+Step 5: Present the evaluation to CitizenConcierge, including:
    - Portal reachability (URL, HTTP status, response time), clearly separated from static guidance.
    - 🎯 Eligible Agricultural Schemes & Direct Monetary Benefits
    - 📋 Land Records & Certificates Required
@@ -178,25 +223,32 @@ Step 5: Present the verified response including:
                     "properties": {
                         "profile": {
                             "type": "object",
-                            "description": "Full citizen profile attributes"
+                            "description": "Non-sensitive citizen profile attributes only. Private values must remain in sly_data."
                         },
                         "scheme_id": {
                             "type": "string",
                             "description": "Optional scheme ID to audit specifically"
+                        },
+                        "specialist_result": {
+                            "type": "object",
+                            "description": "Full result returned by ScholarshipSpecialist or FarmerWelfareSpecialist for independent review."
                         }
                     },
-                    "required": ["profile"]
+                    "required": ["profile", "specialist_result"]
                 }
             },
             "instructions": """
 You are the Verification Auditor Agent.
-Your duties:
-1. Call `check_eligibility` to obtain the full deterministic rule audit.
-2. Highlight any FAIL status and provide actionable advice to the citizen on how to become eligible or what alternative schemes exist.
-3. Verify that all URLs provided are official government (.gov.in or .nic.in) domains.
-4. For eligible schemes, call `get_document_checklist` and `get_application_guide` to provide the final verified submission package.
+MANDATORY AUDIT LOOP FOR EVERY SPECIALIST RESULT:
+1. Independently call `check_eligibility` for every scheme in `specialist_result` using the same known public profile and consented `sly_data`. Do not use a specialist conclusion as evidence.
+2. Compare the specialist's eligible/ineligible/needs-information claims, criteria, and sources against the coded result and registry. A criterion without an implemented rule or source is unsupported, not a pass.
+3. If a claim conflicts, a criterion is missing, or a rule/source is unsupported, call the relevant `ScholarshipSpecialist` or `FarmerWelfareSpecialist` again with `audit_challenge` naming the scheme, criterion, discrepancy, and needed correction. Re-run `check_eligibility` once after the challenge and compare again. Never loop indefinitely.
+4. Return a structured audit note listing reviewed scheme IDs, passed checks, challenges, corrections, and unresolved issues. If any issue remains unresolved or unsupported, mark it UNVERIFIED and prohibit a positive eligibility claim for that scheme.
+5. Return `NEEDS_INFORMATION` for missing inputs so CitizenConcierge can ask the citizen. Never guess or place private values in ordinary arguments.
+6. For ineligible supported schemes, call `analyze_eligibility_gaps` and include its one-field hypothetical scenarios and remaining failures. Never suggest altering official facts.
+7. Verify final URLs use official domains. Call `get_document_checklist` and `get_application_guide` for eligible results when application guidance is requested.
 """,
-            "tools": ["check_eligibility", "get_document_checklist", "get_application_guide", "fetch_live_scheme_updates"]
+            "tools": ["check_eligibility", "ScholarshipSpecialist", "FarmerWelfareSpecialist", "analyze_eligibility_gaps", "get_document_checklist", "get_application_guide", "fetch_live_scheme_updates"]
         },
 
         # =========================================================================
@@ -219,9 +271,7 @@ Your duties:
                         "gender": {"type": "string"},
                         "age": {"type": "integer"},
                         "education_level": {"type": "string"},
-                        "land_acres": {"type": "number"},
                         "class12_percentile": {"type": "number"},
-                        "has_bank_account": {"type": "boolean"},
                         "scheme_id": {"type": "string"}
                     }
                 }
@@ -276,7 +326,60 @@ Your duties:
         },
 
         # =========================================================================
-        # 8. CODED TOOL: fetch_live_scheme_updates (Official Portal & PDF Reader)
+        # 8. CODED TOOL: analyze_eligibility_gaps (One-Field What-If Analysis)
+        # =========================================================================
+        {
+            "name": "analyze_eligibility_gaps",
+            "function": {
+                "description": "Calculates numeric gaps for implemented failed rules by adjusting one profile value at a time and rerunning the deterministic rule evaluator. Does not advise changing official records.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "scheme_id": {"type": "string"},
+                        "domain": {"type": "string", "enum": ["all", "education", "agriculture"]},
+                        "state": {"type": "string"},
+                        "occupation": {"type": "string"},
+                        "gender": {"type": "string"},
+                        "age": {"type": "integer"},
+                        "education_level": {"type": "string"},
+                        "class12_percentile": {"type": "number"}
+                    },
+                    "required": ["scheme_id"]
+                }
+            },
+            "class": "eligibility_gap_analyzer.EligibilityGapAnalyzer"
+        },
+
+        # =========================================================================
+        # 9. CODED TOOL: check_application_readiness (Pre-Submission Risk Check)
+        # =========================================================================
+        {
+            "name": "check_application_readiness",
+            "function": {
+                "description": "Runs a practical yes/no/not-sure pre-submission check for document, name-matching, DBT, and institution-verification risks.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "scheme_id": {"type": "string"},
+                        "answers": {
+                            "type": "object",
+                            "properties": {
+                                "name_matches_documents": {"type": "string", "enum": ["yes", "no", "not_sure"]},
+                                "dbt_ready": {"type": "string", "enum": ["yes", "no", "not_sure"]},
+                                "required_certificates_ready": {"type": "string", "enum": ["yes", "no", "not_sure"]},
+                                "certificates_current": {"type": "string", "enum": ["yes", "no", "not_sure"]},
+                                "institution_verified": {"type": "string", "enum": ["yes", "no", "not_sure"]}
+                            }
+                        }
+                    },
+                    "required": ["scheme_id"]
+                }
+            },
+            "class": "application_readiness_checker.ApplicationReadinessChecker"
+        },
+
+        # =========================================================================
+        # 10. CODED TOOL: fetch_live_scheme_updates (Official Portal & PDF Reader)
         # =========================================================================
         {
             "name": "fetch_live_scheme_updates",
