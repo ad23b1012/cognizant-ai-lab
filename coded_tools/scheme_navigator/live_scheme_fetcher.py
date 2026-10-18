@@ -137,10 +137,10 @@ PORTAL_ALIASES = {
 
 class LiveSchemeFetcher(CodedTool):
     """
-    Autonomous tool to fetch real-time updates from official government portals
-    and extract complete eligibility, benefit, and document requirements directly
-    from official scheme guideline PDF gazettes.
-    Restricts requests to HTTPS .gov.in and .nic.in domains and checks redirects.
+    Checks reachability of configured official portals and can fetch a supplied
+    official PDF/HTML URL for text parsing. Reachability does not verify current
+    announcements, and parsed text is not an authoritative eligibility decision.
+    Fetches are restricted to HTTPS .gov.in and .nic.in hosts, including redirects.
     """
 
     def __init__(self, **kwargs: Any) -> None:

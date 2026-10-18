@@ -27,6 +27,18 @@ from coded_tools.scheme_navigator.live_scheme_fetcher import LiveSchemeFetcher
 
 console = Console()
 
+PRIVATE_PROFILE_KEYS = {
+    "annual_income_inr", "income", "social_category", "category", "caste",
+    "land_acres", "is_taxpayer", "has_bank_account", "ration_card_tier", "aadhaar_seeded",
+}
+
+
+def move_private_profile_fields(args: Dict[str, Any], sly_data: Dict[str, Any]) -> None:
+    """Keep local demo private fields out of the tool's public argument dictionary."""
+    for key in PRIVATE_PROFILE_KEYS:
+        if key in args:
+            sly_data[key] = args.pop(key)
+
 
 SCRIPTED_PERSONAS = [
     {
@@ -43,6 +55,7 @@ SCRIPTED_PERSONAS = [
             "class12_percentile": 89.5
         },
         "sly_data": {
+            "privacy_consent": True,
             "annual_income_inr": 140000,
             "social_category": "SC",
             "ration_card_tier": "BPL",
@@ -64,6 +77,7 @@ SCRIPTED_PERSONAS = [
             "is_taxpayer": False
         },
         "sly_data": {
+            "privacy_consent": True,
             "annual_income_inr": 85000,
             "social_category": "ST",
             "ration_card_tier": "BPL",
@@ -84,6 +98,7 @@ SCRIPTED_PERSONAS = [
             "class12_percentile": 91.0
         },
         "sly_data": {
+            "privacy_consent": True,
             "annual_income_inr": 380000,
             "social_category": "ST",
             "ration_card_tier": "BPL"
@@ -104,6 +119,7 @@ SCRIPTED_PERSONAS = [
             "is_taxpayer": True
         },
         "sly_data": {
+            "privacy_consent": True,
             "annual_income_inr": 720000,
             "social_category": "General",
             "ration_card_tier": "APL"
@@ -116,17 +132,16 @@ def display_banner():
     banner_text = """
   ╔═══════════════════════════════════════════════════════════════════════════════╗
   ║                        🇮🇳  SCHEME NAVIGATOR (YojanaMitra AI)                  ║
-  ║         Autonomous Multi-Agent Citizen Welfare & Scholarship Concierge        ║
+  ║         Local Citizen Welfare & Scholarship Screening Demo        ║
   ║            Cognizant AI Lab × IIIT Raichur Agentic AI Hackathon               ║
   ╚═══════════════════════════════════════════════════════════════════════════════╝
     """
     console.print(f"[bold cyan]{banner_text}[/bold cyan]")
-    console.print("[dim]Powered by Neuro-SAN Framework • Real .gov.in Portals • Native Languages: ಕನ್ನಡ | తెలుగు | हिंदी | தமிழ் • sly_data Vault[/dim]\n")
+    console.print("[dim]Local deterministic CLI demo • Official portal reachability checks • Scripted language examples • sly_data passed within this process[/dim]\n")
 
 
 def display_persona_card(persona: Dict[str, Any]):
     p_args = persona["args"]
-    p_sly = persona["sly_data"]
 
     table = Table(show_header=False, box=None, padding=(0, 2))
     table.add_row("[bold]Citizen Name:[/bold]", f"[cyan]{p_args.get('name')}[/cyan]")
@@ -134,20 +149,15 @@ def display_persona_card(persona: Dict[str, Any]):
     table.add_row("[bold]Occupation:[/bold]", f"[yellow]{p_args.get('occupation', '').title()}[/yellow]")
     table.add_row("[bold]Age / Gender:[/bold]", f"{p_args.get('age')} yrs / {p_args.get('gender', '').title()}")
     
-    # Showcase sly_data privacy
     table.add_row(
-        "[bold magenta]Annual Family Income:[/bold magenta]",
-        f"[green]₹{p_sly.get('annual_income_inr', 0):,}[/green] [dim](Protected via sly_data)[/dim]"
-    )
-    table.add_row(
-        "[bold magenta]Social Category / Quota:[/bold magenta]",
-        f"[white]{p_sly.get('social_category')}[/white] [dim](Protected via sly_data)[/dim]"
+        "[bold magenta]Private screening details:[/bold magenta]",
+        "[dim]Provided through sly_data; values are masked in this display[/dim]"
     )
 
     if p_args.get("occupation") == "farmer":
-        table.add_row("[bold]Landholdings:[/bold]", f"[white]{p_args.get('land_acres')} Acres[/white]")
+        table.add_row("[bold]Landholding:[/bold]", "[dim]Provided privately; value masked[/dim]")
         table.add_row("[bold]Crops Cultivated:[/bold]", f"[green]{', '.join(p_args.get('crops', []))}[/green]")
-        table.add_row("[bold]Income Tax Payer:[/bold]", f"{'Yes ⚠️ (Disqualified for DBT)' if p_args.get('is_taxpayer') else 'No (Eligible for DBT)'}")
+        table.add_row("[bold]Taxpayer status:[/bold]", "[dim]Provided privately; value masked[/dim]")
     else:
         table.add_row("[bold]Education Course:[/bold]", f"[white]{p_args.get('education_level', '').title()}[/white]")
         table.add_row("[bold]Merit Score:[/bold]", f"[green]{p_args.get('class12_percentile')}% (Class 12)[/green]")
@@ -162,30 +172,32 @@ async def run_agent_workflow(persona: Dict[str, Any]):
 
     args = persona["args"].copy()
     sly_data = persona["sly_data"].copy()
+    move_private_profile_fields(args, sly_data)
 
-    # Visual agent orchestration step-by-step
-    console.print("\n[bold yellow]🤖 Multi-Agent Orchestration Lifecycle:[/bold yellow]")
-    
-    steps = [
-        ("Front Man (CitizenConcierge)", "Analyzing citizen inquiry & decomposing intent..."),
-        ("Privacy Gatekeeper (sly_data)", "Vaulting sensitive income & caste out-of-band..."),
-        ("Domain Specialist Agent", f"Routing to {'FarmerWelfareSpecialist' if args.get('occupation')=='farmer' else 'ScholarshipSpecialist'}..."),
-        ("Deterministic CodedTool", "Executing SchemeEligibilityEngine against verified government rules..."),
-        ("Verification Auditor Agent", "Auditing statutory exclusions & attaching official .gov.in citations...")
-    ]
+    console.print(
+        "\n[bold yellow]Local demo workflow[/bold yellow] "
+        "[dim](direct Python tool calls; this CLI does not invoke Neuro-SAN agents or an LLM)[/dim]"
+    )
+    console.print("  1. Citizen profile loaded; the CLI passes income/category in a local sly_data mapping.")
+    console.print("  2. Running deterministic eligibility rules...")
 
-    for agent, action in steps:
-        with Progress(SpinnerColumn(), TextColumn(f"[bold green]{agent}:[/bold green] [dim]{action}[/dim]"), console=console) as progress:
-            task = progress.add_task("run", total=None)
-            await asyncio.sleep(0.35)
-
-    # 1. Evaluate eligibility
+    # 1. Evaluate eligibility using the local coded tool.
     elig_result = await engine.async_invoke(args, sly_data)
-    eligible_schemes = elig_result["eligible_schemes"]
-    ineligible_schemes = elig_result["ineligible_schemes"]
+    if not isinstance(elig_result, dict) or elig_result.get("status") in {
+        "INVALID_INPUT", "PRIVATE_INPUT_REQUIRED", "CONSENT_REQUIRED", "NOT_FOUND"
+    }:
+        message = elig_result.get("message", str(elig_result)) if isinstance(elig_result, dict) else str(elig_result)
+        console.print(f"[bold red]Eligibility check could not run:[/bold red] {message}")
+        return
+    eligible_schemes = elig_result.get("eligible_schemes", [])
+    ineligible_schemes = elig_result.get("ineligible_schemes", [])
+    needs_information = elig_result.get("needs_information", [])
+    unsupported_schemes = elig_result.get("unsupported_schemes", [])
+    registry_as_of = elig_result.get("registry_as_of") or "date unavailable"
+    console.print(f"[dim]Registry snapshot: {registry_as_of}. This is a preliminary screen, not an official decision.[/dim]")
 
     # 2. Present Eligible Schemes
-    console.print(f"\n[bold green]✅ QUALIFIED SCHEMES & ENTITLEMENTS ({len(eligible_schemes)} Found):[/bold green]")
+    console.print(f"\n[bold green]✅ SCHEMES SCREENED AS ELIGIBLE ({len(eligible_schemes)} Found):[/bold green]")
     if eligible_schemes:
         for idx, scheme in enumerate(eligible_schemes, 1):
             details_table = Table(show_header=False, box=None, padding=(0, 1))
@@ -193,7 +205,16 @@ async def run_agent_workflow(persona: Dict[str, Any]):
             details_table.add_row("[bold]Authority:[/bold]", f"[dim]{scheme['administering_authority']}[/dim]")
             details_table.add_row("[bold]Official Portal:[/bold]", f"[link={scheme['portal_url']}]{scheme['portal_url']}[/link]")
             if scheme.get("application_status"):
-                details_table.add_row("[bold]Portal Status:[/bold]", f"[yellow]{scheme['application_status']}[/yellow]")
+                details_table.add_row("[bold]Registry note (verify live):[/bold]", f"[yellow]{scheme['application_status']}[/yellow]")
+            details_table.add_row(
+                "[bold]Registry source review:[/bold]",
+                str(scheme.get("source_reviewed_as_of") or registry_as_of),
+            )
+            if scheme.get("verification_notes"):
+                details_table.add_row("[bold]Verification note:[/bold]", scheme["verification_notes"])
+            source_urls = scheme.get("source_urls", [])
+            if source_urls:
+                details_table.add_row("[bold]Official sources:[/bold]", "\n".join(source_urls[:3]))
 
             # Add rules breakdown
             passed_rules = [f"✓ {r['rule']}: {r['reason']}" for r in scheme["rules_audit"] if r["status"] == "PASS"]
@@ -205,7 +226,10 @@ async def run_agent_workflow(persona: Dict[str, Any]):
                 border_style="green"
             ))
     else:
-        console.print("[yellow]No direct schemes matched standard criteria.[/yellow]")
+        if needs_information:
+            console.print("[yellow]No eligible match can be confirmed yet; some schemes need more profile information.[/yellow]")
+        else:
+            console.print("[yellow]No scheme screens as eligible under the implemented rules for this profile.[/yellow]")
 
     # 3. Present Ineligible Schemes & "Why am I not eligible" Audit
     if ineligible_schemes:
@@ -213,40 +237,69 @@ async def run_agent_workflow(persona: Dict[str, Any]):
         audit_table = Table(title="Statutory Rejection Root Cause Analysis", show_lines=True)
         audit_table.add_column("Scheme", style="white", width=28)
         audit_table.add_column("Specific Failed Rule", style="red", width=30)
-        audit_table.add_column("Actionable Guidance", style="yellow", width=35)
+        audit_table.add_column("Next Step", style="yellow", width=30)
+        audit_table.add_column("Official source / review date", style="cyan", width=34)
 
         for s in ineligible_schemes[:3]:  # Top 3 most relevant ineligibilities
             audit_table.add_row(
                 f"[{s['scheme_id']}] {s['scheme_name']}",
                 s["why_not_eligible"] or "Criteria mismatch",
-                s["actionable_advice"]
+                s["actionable_advice"],
+                "\n".join(s.get("source_urls", [])[:2])
+                + f"\nRegistry as of {s.get('source_reviewed_as_of') or registry_as_of}"
             )
         console.print(audit_table)
 
-    # 4. Document Checklist
+    if needs_information:
+        console.print("\n[bold yellow]More information needed[/bold yellow]")
+        for item in needs_information:
+            fields = ", ".join(item.get("missing_fields", [])) or "profile details"
+            console.print(f"  • {item.get('scheme_name', item.get('scheme_id'))}: provide {fields} to screen this scheme.")
+            sources = item.get("source_urls", [])
+            if sources:
+                console.print(f"    [dim]Official sources (registry as of {item.get('source_reviewed_as_of') or registry_as_of}): {'; '.join(sources[:2])}[/dim]")
+
+    if unsupported_schemes:
+        console.print("\n[bold dim]Rules not implemented for these registry entries[/bold dim]")
+        for item in unsupported_schemes:
+            console.print(f"  • {item.get('scheme_name', item.get('scheme_id'))} ({item.get('scheme_id')})")
+            sources = item.get("source_urls", [])
+            if sources:
+                console.print(f"    [dim]Official sources: {'; '.join(sources[:2])}[/dim]")
+
+    # 4. Build a readiness checklist for the first eligible registry match.
     if eligible_schemes:
-        eligible_ids = [s["scheme_id"] for s in eligible_schemes]
-        doc_result = await doc_tool.async_invoke({"scheme_ids": eligible_ids, "state": args.get("state")}, sly_data)
-        
-        console.print(f"\n[bold cyan]📑 OFFICIAL DOCUMENT PREPARATION CHECKLIST:[/bold cyan]")
+        primary_scheme = eligible_schemes[0]
+        console.print("\n[bold cyan]Application readiness checklist[/bold cyan]")
+        console.print(
+            f"[dim]Starting with {primary_scheme['scheme_name']} (first eligible result in registry order). "
+            "This screen did not confirm the live application window or final eligibility.[/dim]"
+        )
+        doc_result = await doc_tool.async_invoke(
+            {"scheme_id": primary_scheme["scheme_id"], "state": args.get("state")}, sly_data
+        )
+        console.print("  3. DocumentChecklistGenerator completed locally.")
+        console.print(f"\n[bold cyan]Documents to gather or verify for {primary_scheme['scheme_id']}:[/bold cyan]")
         doc_table = Table(show_lines=True)
+        doc_table.add_column("Ready?", style="yellow", width=10)
         doc_table.add_column("Certificate / Document", style="bold white", width=28)
         doc_table.add_column("Issuing Authority", style="cyan", width=25)
         doc_table.add_column("Digital Procurement & DigiLocker Tip", style="dim", width=40)
 
-        for d in doc_result["consolidated_checklist"][:4]:
+        for d in doc_result.get("consolidated_checklist", []):
             doc_table.add_row(
+                "[ ] Check",
                 d["document_name"],
                 d["issuing_authority"],
                 d["digital_acquisition_tips"]
             )
         console.print(doc_table)
 
-    # 5. Application Steps for Top Scheme
+    # 5. Show official application actions for the selected scheme.
     if eligible_schemes:
         top_scheme_id = eligible_schemes[0]["scheme_id"]
         guide_result = await guide_tool.async_invoke({"scheme_id": top_scheme_id}, sly_data)
-        
+        console.print("  4. ApplicationGuide completed locally.")
         console.print(f"\n[bold magenta]🚀 APPLICATION ROADMAP FOR: {guide_result['scheme_name']}[/bold magenta]")
         for i, step in enumerate(guide_result["step_by_step_instructions"], 1):
             console.print(f"  [bold cyan]{i}.[/bold cyan] {step}")
@@ -256,7 +309,18 @@ async def run_agent_workflow(persona: Dict[str, Any]):
 
 async def interactive_mode():
     console.print("\n[bold cyan]=== Custom Interactive Citizen Consultation ===[/bold cyan]")
-    name = console.input("[bold]Enter Citizen Name: [/bold]") or "Citizen"
+    console.print(Panel(
+        "This CLI uses profile details only in the current local Python process for preliminary screening. "
+        "It does not send them to an LLM or write them to disk in this workflow. Private values are masked in the summary. "
+        "Do not enter Aadhaar numbers or other identity numbers.",
+        title="Privacy notice",
+        border_style="yellow",
+    ))
+    consent = console.input("Use the private profile values for this screening? Type YES to continue: ").strip()
+    if consent.casefold() != "yes":
+        console.print("[yellow]Screening cancelled; no profile details were requested.[/yellow]")
+        return
+
     occ = console.input("[bold]Occupation (student / farmer) [default: student]: [/bold]").lower() or "student"
     state = console.input("[bold]State (e.g. karnataka, andhra_pradesh) [default: karnataka]: [/bold]").lower() or "karnataka"
     income_str = console.input("[bold]Annual Family Income (INR) [default: 150000]: [/bold]") or "150000"
@@ -268,13 +332,14 @@ async def interactive_mode():
     category = console.input("[bold]Social Category (General / OBC / SC / ST) [default: SC]: [/bold]") or "SC"
 
     args = {
-        "name": name,
+        "name": "Demo applicant",
         "occupation": occ,
         "state": state,
         "gender": "male",
         "age": 20
     }
     sly_data = {
+        "privacy_consent": True,
         "annual_income_inr": income,
         "social_category": category,
         "ration_card_tier": "BPL"
@@ -282,14 +347,15 @@ async def interactive_mode():
 
     if occ == "farmer":
         acres_str = console.input("[bold]Landholding in Acres [default: 3.0]: [/bold]") or "3.0"
-        args["land_acres"] = float(acres_str)
-        args["is_taxpayer"] = False
+        sly_data["land_acres"] = float(acres_str)
+        taxpayer = console.input("Income-tax payer? (yes/no) [default: no]: ").strip().casefold()
+        sly_data["is_taxpayer"] = taxpayer in {"yes", "y"}
     else:
         args["education_level"] = "engineering"
         args["class12_percentile"] = 88.0
 
     custom_persona = {
-        "title": f"Custom Consultation for {name}",
+        "title": "Custom Consultation (private values masked)",
         "args": args,
         "sly_data": sly_data
     }
@@ -301,7 +367,7 @@ async def run_live_portal_monitor():
     fetcher = LiveSchemeFetcher()
     console.print(Panel(
         "[bold green]🌐 LIVE OFFICIAL PORTAL MONITOR & PDF GUIDELINE INSPECTOR[/bold green]\n"
-        "[dim]Guaranteed Zero Misinformation: Connecting strictly to verified Government of India (.gov.in / .nic.in) networks[/dim]",
+        "[dim]Checks portal reachability and restricts fetches to HTTPS .gov.in / .nic.in hosts. Reachability does not verify scheme rules.[/dim]",
         border_style="green"
     ))
 
@@ -314,28 +380,31 @@ async def run_live_portal_monitor():
         res = await fetcher.async_invoke({"action": "check_portal_status"}, {})
 
     portals = res.get("portals", [])
-    table = Table(title="Live Central & State Portal Health & Announcements", show_header=True, header_style="bold magenta")
+    table = Table(title="Live Portal Reachability and Registry Guidance", show_header=True, header_style="bold magenta")
     table.add_column("Portal", style="bold cyan", width=22)
     table.add_column("Live Status", style="green", width=14)
     table.add_column("Latency", style="yellow", width=10)
-    table.add_column("Active Official Announcement", style="white")
+    table.add_column("Static registry guidance (not live notices)", style="white")
 
     for p in portals:
-        status_text = "🟢 Operational" if p["is_operational"] else "🟡 Degraded"
-        announcement = p["active_announcements"][0] if p["active_announcements"] else "Portal active"
-        table.add_row(p["portal_name"], status_text, f"{p['response_time_ms']} ms", announcement)
+        status_text = "🟢 Reachable" if p.get("is_operational") else "🔴 Unreachable / check failed"
+        latency = p.get("response_time_ms")
+        latency_text = f"{latency} ms" if latency is not None else "—"
+        guidance = p.get("static_guidance") or []
+        table.add_row(p.get("portal_name", "Unknown portal"), status_text, latency_text,
+                      guidance[0] if guidance else "No static guidance configured")
 
     console.print(table)
 
-    # Demonstrate Zero-Misinformation Firewall
-    console.print("\n[bold yellow]🛡️ Zero-Misinformation Anti-Phishing Guardrail Demonstration:[/bold yellow]")
+    # Demonstrate the allowlist rejecting a non-government domain.
+    console.print("\n[bold yellow]🛡️ Anti-phishing domain allowlist demonstration:[/bold yellow]")
     fake_url = "https://fake-scholarship-agent.com/apply-now.pdf"
     blocked_res = await fetcher.async_invoke({"action": "fetch_official_pdf_guidelines", "url": fake_url}, {})
     console.print(f"  [bold]Input URL:[/bold] [dim]{fake_url}[/dim]")
     console.print(f"  [bold red]Result:[/bold red] {blocked_res.get('status')} - [italic]{blocked_res.get('error', '')[:85]}...[/italic]")
 
-    # Demonstrate PDF Guideline Text Parsing
-    console.print("\n[bold green]📑 Real-time Official Scheme PDF Guideline Extractor:[/bold green]")
+    # Demonstrate parsing on sample text; this sample is not downloaded from a portal.
+    console.print("\n[bold green]📑 Guideline parser demonstration (sample text, not a live source):[/bold green]")
     sample_text = (
         "SCHEME OF CENTRAL SECTOR SCHOLARSHIP FOR COLLEGE AND UNIVERSITY STUDENTS\n"
         "Ministry of Education, Department of Higher Education\n"
@@ -348,15 +417,15 @@ async def run_live_portal_monitor():
     console.print(f"  • [bold]Statutory Income Ceiling:[/bold] ₹{parsed['income_ceiling_inr']:,}")
     console.print(f"  • [bold]Monetary Benefit:[/bold] {parsed['benefit_summary']}")
     console.print(f"  • [bold]Mandatory Certificates:[/bold] {', '.join(parsed['mandatory_documents'])}")
-    console.print("  • [bold]Verification Audit:[/bold] [bold green]✓ 100% Authentic Government Gazette Extracted[/bold green]")
+    console.print("  • [bold]Source status:[/bold] [yellow]Illustrative sample only; no government document was fetched for this parse.[/yellow]")
 
 
 async def run_vernacular_showcase():
     engine = SchemeEligibilityEngine()
 
     console.print(Panel(
-        "[bold cyan]🗣️ MULTILINGUAL NATIVE LANGUAGE ASSISTANT (ಯೋಜನಾಮಿತ್ರ / యోజనామిత్ర / योजनामित्र / யோஜனாமித்ரா)[/bold cyan]\n"
-        "[dim]Full Native Language Support: Kannada (ಕನ್ನಡ) • Telugu (తెలుగు) • Hindi (हिंदी) • Tamil (தமிழ்)[/dim]",
+        "[bold cyan]🗣️ SCRIPTED MULTILINGUAL EXAMPLE SHOWCASE (ಯೋಜನಾಮಿತ್ರ / యోజనామిత్ర / योजनामित्र / யோஜனாமித்ரா)[/bold cyan]\n"
+        "[dim]Prewritten examples: Kannada (ಕನ್ನಡ) • Telugu (తెలుగు) • Hindi (हिंदी) • Tamil (தமிழ்); no live language model runs in this CLI.[/dim]",
         border_style="cyan"
     ))
 
@@ -378,6 +447,7 @@ async def run_vernacular_showcase():
                 "gender": "male"
             },
             "sly_data": {
+                "privacy_consent": True,
                 "annual_income_inr": 85000,
                 "social_category": "ST",
                 "ration_card_tier": "BPL",
@@ -420,6 +490,7 @@ async def run_vernacular_showcase():
                 "gender": "male"
             },
             "sly_data": {
+                "privacy_consent": True,
                 "annual_income_inr": 140000,
                 "social_category": "SC",
                 "ration_card_tier": "BPL",
@@ -459,6 +530,7 @@ async def run_vernacular_showcase():
                 "gender": "male"
             },
             "sly_data": {
+                "privacy_consent": True,
                 "annual_income_inr": 90000,
                 "social_category": "OBC",
                 "ration_card_tier": "BPL",
@@ -499,6 +571,7 @@ async def run_vernacular_showcase():
                 "gender": "male"
             },
             "sly_data": {
+                "privacy_consent": True,
                 "annual_income_inr": 150000,
                 "social_category": "SC",
                 "ration_card_tier": "BPL",
@@ -523,28 +596,33 @@ async def run_vernacular_showcase():
         }
     ]
 
-    console.print("\n[bold]Select Native Indic Language to Demonstrate:[/bold]")
+    console.print("\n[bold]Select a scripted language example:[/bold]")
     for d in vernacular_demos:
         console.print(f"  [bold cyan][{d['id']}][/bold cyan] {d['title']}")
-    console.print("  [bold cyan][5][/bold cyan] ✍️  Type Your Own Query in Any Indian Language")
+    console.print("  [bold cyan][5][/bold cyan] ✍️  Enter a query to display (not processed by a model)")
 
-    sub_choice = console.input("\n[bold yellow]Select Language (1-5) [default: 1]: [/bold yellow]") or "1"
+    sub_choice = console.input("\n[bold yellow]Select Example (1-5) [default: 1]: [/bold yellow]") or "1"
 
     if sub_choice in ("1", "2", "3", "4"):
         item = next(d for d in vernacular_demos if d["id"] == sub_choice)
+        tool_args = item["params"].copy()
+        tool_sly_data = item["sly_data"].copy()
+        move_private_profile_fields(tool_args, tool_sly_data)
 
         console.print(f"\n[bold green]━━━ 🇮🇳 {item['lang']} Demonstration ━━━[/bold green]")
         console.print(f"[bold]🗣️ Citizen Inquiry ({item['lang']}):[/bold]")
         console.print(f"  [italic cyan]\"{item['query']}\"[/italic cyan]")
         console.print(f"  [dim]Translation: \"{item['translation']}\"[/dim]")
 
-        # Step 1: Agentic Vernacular Parsing
-        console.print("\n[bold yellow]🤖 Agentic Multilingual Pipeline:[/bold yellow]")
-        console.print(f"  • [bold]Front Man (CitizenConcierge):[/bold] Detected language: [green]{item['lang']}[/green]")
-        console.print("  • [bold]Intent Decomposition:[/bold] Extracted structured parameters for Python CodedTools:")
-        for k, v in item["params"].items():
+        # Parameters and response are prewritten examples, not live model output.
+        console.print("\n[bold yellow]Scripted example details:[/bold yellow]")
+        console.print(f"  • [bold]Example language:[/bold] [green]{item['lang']}[/green]")
+        console.print("  • [bold]Prewritten profile passed to the local rule engine:[/bold]")
+        for k, v in tool_args.items():
             if k != "name":
                 console.print(f"      - {k}: [cyan]{v}[/cyan]")
+        if any(key in tool_sly_data for key in PRIVATE_PROFILE_KEYS):
+            console.print("      - private screening details: [dim]consented sample values, masked[/dim]")
 
         # Step 2: Deterministic Python Engine Execution
         with Progress(
@@ -553,14 +631,14 @@ async def run_vernacular_showcase():
             transient=True
         ) as progress:
             progress.add_task("calc", total=None)
-            calc_res = await engine.async_invoke(item["params"], item["sly_data"])
+            calc_res = await engine.async_invoke(tool_args, tool_sly_data)
 
         eligible_count = len(calc_res.get("eligible_schemes", []))
-        console.print(f"  • [bold]Deterministic Python Engine Result:[/bold] [bold green]✓ {eligible_count} Verified Schemes Qualified (0% Hallucination)[/bold green]")
+        console.print(f"  • [bold]Deterministic Python Engine Result:[/bold] [bold green]✓ {eligible_count} schemes screened as eligible under implemented rules[/bold green]")
 
-        # Step 3: Localized Vernacular Synthesis
+        # Step 3: Display the prewritten example response.
         vr = item["vernacular_response"]
-        console.print(f"\n[bold magenta]🌟 Concierge Response in {item['lang']}:[/bold magenta]")
+        console.print(f"\n[bold magenta]Prewritten example response in {item['lang']}:[/bold magenta]")
         console.print(f"[bold]{vr['greeting']}[/bold]\n{vr['summary']}\n")
 
         table = Table(show_header=True, header_style="bold magenta")
@@ -579,11 +657,10 @@ async def run_vernacular_showcase():
         console.print(f"\n[bold red]{vr['caution']}[/bold red]")
 
     elif sub_choice == "5":
-        user_query = console.input("\n[bold yellow]Type your question in Telugu, Hindi, Kannada, Tamil, or Hinglish: [/bold yellow]")
+        user_query = console.input("\n[bold yellow]Enter text to display (the CLI will not process it): [/bold yellow]")
         if user_query:
-            console.print(f"\n[bold]Citizen Input:[/bold] [italic cyan]{user_query}[/italic cyan]")
-            console.print("[dim]Parsing native language intent and routing to CitizenConcierge...[/dim]")
-            console.print("[bold green]✓ Supported natively! You can also chat directly via the Web UI at http://localhost:4173 in any of these languages.[/bold green]")
+            console.print(f"\n[bold]Unprocessed sample text:[/bold] [italic cyan]{user_query}[/italic cyan]")
+            console.print("[yellow]No language detection, intent extraction, or agent call was made. Use a separately configured Neuro-SAN runtime for live conversations.[/yellow]")
 
 
 async def main():
@@ -595,7 +672,7 @@ async def main():
             console.print(f"  [bold cyan][{p['id']}][/bold cyan] {p['title']}")
         console.print("  [bold cyan][5][/bold cyan] ✍️  Interactive Custom Profile")
         console.print("  [bold cyan][6][/bold cyan] 🌐 Live Official Portal Monitor & PDF Guideline Inspector")
-        console.print("  [bold cyan][7][/bold cyan] 🗣️  Multilingual Native Language Assistant (తెలుగు | தமிழ் | ಕನ್ನಡ | हिंदी)")
+        console.print("  [bold cyan][7][/bold cyan] 🗣️  Scripted Multilingual Language Examples (తెలుగు | தமிழ் | ಕನ್ನಡ | हिंदी)")
         console.print("  [bold cyan][0][/bold cyan] 🚪 Exit")
 
         choice = console.input("\n[bold yellow]Select Option (0-7) [default: 1]: [/bold yellow]") or "1"

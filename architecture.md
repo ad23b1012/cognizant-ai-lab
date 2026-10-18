@@ -22,14 +22,18 @@ This crisis of delivery stems from four structural bottlenecks in the welfare de
    Illiterate or semi-literate citizens are routinely exploited by unauthorized local brokers charging 20% to 30% commissions for welfare programs that are 100% free by law.
 
 ### 1.2 Our Solution & Mission
-**Scheme Navigator (YojanaMitra AI)** is an autonomous, privacy-preserving multi-agent system built on **Cognizant's Neuro-SAN framework**. It acts as a trusted, empathetic digital concierge that:
+**Scheme Navigator (YojanaMitra AI)** provides a Neuro-SAN agent network and a separate local CLI demo. Run `uv run --env-file .env --no-sync ns run` (the primary launch command) to start the focused agent network and `nsflow` UI; run `uv run --no-sync python main.py` for direct local tool calls. The network:
 
-- Conversationally elicits citizen profiles in native Indic languages (**Telugu, Hindi, Kannada, Tamil, and English**).
-- Evaluates statutory eligibility **with deterministic code execution (not a guarantee of current or complete statutory criteria)** through deterministic Python `CodedTools`, eliminating LLM hallucination risks.
-- Protects sensitive financial, caste, and landholding data using Neuro-SAN's **`sly_data` out-of-band privacy vault**, when the host routes those values privately; this repository does not guarantee prompt or log isolation.
-- Provides transparent clause-by-clause **"Why Not Eligible"** audit trails when criteria are not met, suggesting actionable alternatives.
-- Pings live official government portals (`.gov.in` and `.nic.in`) in real-time, enforcing strict anti-phishing whitelists and parsing statutory PDF gazette guidelines on-the-fly.
-- Equips citizens with a application guidance: state issuing authorities (*Nadakacheri, MeeSeva, DigiLocker, UIDAI*), required certificates, and anti-bribe warnings.
+- Supports English by default and other configured languages when explicitly requested in the concierge prompt.
+- Evaluates profiles against implemented Python rules. Deterministic execution avoids LLM-generated decisions for those rules, but does not guarantee that criteria are current or complete.
+- Declares income, category, landholding, and taxpayer details in the front-man **`sly_data_schema`**, requires explicit consent in the eligibility tool, and rejects private fields passed in ordinary tool arguments. Runtime privacy still depends on the client and deployment configuration.
+- Provides rule-by-rule screening explanations, asks one follow-up at a time for missing non-sensitive information using numbered options plus “Other (please specify),” and surfaces unsupported rules. Private details remain in consented `sly_data` fields.
+- Routes every specialist result through `VerificationAuditorAgent`, which rechecks the deterministic result and challenges the specialist once when claims conflict or omit criteria.
+- Offers single-field numeric what-if analysis for supported failed rules and a yes/no/not-sure application-readiness pre-check with corrective steps. These tools do not change official records or predict acceptance.
+- Checks reachability of configured official portals. Portal checks do not retrieve current announcements; optional fetch actions can parse PDF/HTML text from allowed HTTPS government domains.
+- Equips citizens with application guidance: state issuing authorities (*Nadakacheri, MeeSeva, DigiLocker, UIDAI*), common documents, and anti-fraud reminders.
+
+> **Implementation status:** The diagrams describe the Neuro-SAN flow launched with `uv run --env-file .env --no-sync ns run`. The local CLI remains a separate mode that directly invokes coded tools.
 
 ---
 
@@ -39,7 +43,7 @@ The end-to-end processing lifecycle flows through four distinct phases:
 
 ```mermaid
 flowchart TD
-    User(["Citizen User\n(Telugu / Hindi / Kannada / Tamil / English)"]) -->|Vernacular or English Query| Concierge["CitizenConcierge\n(Front Man Agent)"]
+    User(["Citizen User\n(English default; other languages by request)"]) -->|Query| Concierge["CitizenConcierge\n(Neuro-SAN registry agent)"]
     
     subgraph Elicitation ["Phase 1: Conversational Profile Elicitation"]
         Concierge -->|Elicits Profile| ProfileParser["Conversational Intent & Parameter Extractor"]
@@ -53,7 +57,7 @@ flowchart TD
         Concierge -->|Audit / Rejection Analysis| AuditorAgent["VerificationAuditorAgent"]
     end
 
-    subgraph DeterministicExecution ["Phase 3: Deterministic CodedTools (0% Hallucination)"]
+    subgraph DeterministicExecution ["Phase 3: Deterministic CodedTools (implemented rules only)"]
         ScholarAgent --> CodedEngine["SchemeEligibilityEngine\n(Python Rule Engine)"]
         FarmerAgent --> CodedEngine
         AuditorAgent --> CodedEngine
@@ -70,7 +74,7 @@ flowchart TD
         CodedEngine <--> VerifiedDB[("Verified Schemes DB\ndata/schemes_db.json\n(13 Central & State Programs)")]
     end
 
-    subgraph Synthesis ["Phase 4: Synthesis & Multilingual Delivery"]
+    subgraph Synthesis ["Phase 4: Synthesis & Requested Language Delivery"]
         LiveFetch --> VerifiedOutput["Consolidated Scheme Dossier"]
         CodedEngine --> VerifiedOutput
         DocGen --> VerifiedOutput
@@ -136,9 +140,9 @@ The agent collective is specified declaratively in HOCON (`registries/scheme_nav
        =================================================================
                                     │
                                     ▼
-       =================== ZERO-LEAKAGE PRIVACY ========================
+       ===== OPTIONAL HOST-CONFIGURED PRIVATE DATA ROUTING =============
        │  host-configured sly_data channel: Income, Caste, Ration Tier, Aadhaar DBT      │
-       │  (Out-of-band: never streamed to external LLM prompts!)       │
+       │  (Private only when the client/runtime preserves this channel) │
        =================================================================
 ```
 
@@ -147,12 +151,12 @@ The agent collective is specified declaratively in HOCON (`registries/scheme_nav
 ### 3.2 Individual Agent Roles and Responsibilities
 
 #### 1. `CitizenConcierge` (The Public Touchpoint / Front Man)
-- **Role**: Serves as the primary public interface for the citizen. Welcomes users, speaks and understands five languages (**Telugu, Hindi, Kannada, Tamil, English**), and extracts unstructured citizen situations into structured parameters.
+- **Role**: Intended Neuro-SAN public interface. The prompt sets English as the default and supports Telugu, Hindi, Kannada, and Tamil when explicitly requested; it extracts citizen situations into structured parameters.
 - **Responsibilities**:
-  - Greet the user in their mother tongue with natural, polite Indic phrasing.
+  - Keep using the current response language. Do not infer it from the citizen's location or message language; switch only on an explicit request.
   - Dynamically elicit key profile parameters: student vs. farmer, state of domicile, educational program or land size, income tier, and social category.
   - Route domain-specific requests to specialized subordinate agents (`ScholarshipSpecialist`, `FarmerWelfareSpecialist`, `VerificationAuditorAgent`).
-  - Synthesize the verified multi-tool output back into empathetic vernacular text, highlighting monetary benefits, official `.gov.in` URLs, and anti-bribe warnings.
+  - Synthesize tool output in the selected response language, highlighting monetary benefits, official source URLs, and anti-fraud guidance.
 
 #### 2. `ScholarshipSpecialist` (Higher Education Domain Sub-Agent)
 - **Role**: Dedicated domain expert in central and state higher education scholarships, fee concessions, and hostel subsidies.
@@ -203,7 +207,7 @@ Scheme Navigator enforces a strict architectural boundary: **The LLM does not ex
 | CodedTool Class | File Path | Core Functionality | Hallucination Defense |
 |---|---|---|---|
 | **`SchemeEligibilityEngine`** | [`coded_tools/scheme_navigator/scheme_eligibility_engine.py`](file:///c:/Users/oppur/vscode/Projects/cognizant-ai-lab/coded_tools/scheme_navigator/scheme_eligibility_engine.py) | Evaluates supported citizen profiles using Python rule branches; the JSON registry contains scheme metadata and does not define eligibility logic. | Deterministic execution for implemented rules; source currency and completeness are not guaranteed. |
-| **`LiveSchemeFetcher`** | [`coded_tools/scheme_navigator/live_scheme_fetcher.py`](file:///c:/Users/oppur/vscode/Projects/cognizant-ai-lab/coded_tools/scheme_navigator/live_scheme_fetcher.py) | Pings live `.gov.in` portals in real-time, extracts text from official PDF gazette guidelines (`pypdf`), and enforces domain whitelists. | Rejects all non-`.gov.in` / non-`.nic.in` domains. Never allows commercial broker links. |
+| **`LiveSchemeFetcher`** | [`coded_tools/scheme_navigator/live_scheme_fetcher.py`](file:///c:/Users/oppur/vscode/Projects/cognizant-ai-lab/coded_tools/scheme_navigator/live_scheme_fetcher.py) | Checks portal reachability; its separate fetch action can parse PDF or HTML text from HTTPS government domains. | Enforces allowed host suffixes for fetches. Reachability does not verify announcements or eligibility rules. |
 | **`DocumentChecklistGenerator`** | [`coded_tools/scheme_navigator/document_checklist_generator.py`](file:///c:/Users/oppur/vscode/Projects/cognizant-ai-lab/coded_tools/scheme_navigator/document_checklist_generator.py) | Maps eligible scheme IDs to exact state issuing authorities (*Nadakacheri, MeeSeva, DigiLocker, Revenue Dept*). | Deterministic lookup table of statutory issuing bodies. |
 | **`ApplicationGuide`** | [`coded_tools/scheme_navigator/application_guide.py`](file:///c:/Users/oppur/vscode/Projects/cognizant-ai-lab/coded_tools/scheme_navigator/application_guide.py) | Generates step-by-step portal roadmap, highlighting Aadhaar-NPCI bank seeding and anti-bribe warnings. | Pre-verified portal URLs, toll-free helplines, and known application failure checkpoints. |
 
@@ -222,34 +226,35 @@ Under standard LLM architectures, these attributes are injected directly into th
 
 #### 5.1 The configured `sly_data` boundary
 
-The coded tool accepts values from Neuro-SAN's `sly_data` channel. The agent registry and host deployment must explicitly configure which values enter that channel; tool code cannot prevent a model from seeing information disclosed in conversation.
+The front-man declares `privacy_consent`, annual income, social category, landholding, and taxpayer status in `sly_data_schema`. Clients that support this schema can collect private values separately from chat. The eligibility tool requires `privacy_consent: true` when private values are provided and rejects these fields if they arrive in normal tool arguments. Citizens should not type sensitive values into chat. Runtime behavior still depends on the client honoring the private channel.
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Citizen as Citizen User
+    participant Client as nsflow client
     participant Concierge as CitizenConcierge (LLM)
     participant Channel as Neuro-SAN Engine
     participant SlyData as host-configured sly_data channel (Out-of-Band)
     participant CodedTool as SchemeEligibilityEngine (Python)
 
-    Citizen->>Concierge: "My income is 1.4 Lakhs, SC student in Raichur"
-    Concierge->>Channel: Extract parameters
-    Note over Channel,SlyData: Sensitive fields segregated OUT-OF-BAND
-    Channel->>SlyData: Store {"annual_income_inr": 140000, "social_category": "SC"}
-    Channel->>Concierge: Public Args: {"state": "karnataka", "education_level": "engineering"}
-    
+    Citizen->>Client: "I'm a student in Raichur. Please screen me for scholarships."
+    Client->>Concierge: Public chat message
+    Client->>SlyData: After consent, collect private income/category fields
+    Note over Channel,SlyData: Client sends consent and sensitive fields OUT-OF-BAND
+    Concierge->>Channel: Public tool args: {"state": "karnataka", "education_level": "engineering"}
     Concierge->>CodedTool: async_invoke(args={state, education_level}, sly_data={income, caste})
     Note over CodedTool: Deterministic evaluation inside local Python memory
     CodedTool-->>Concierge: Returns Eligible Schemes: [EDU-001, EDU-003, EDU-005]
-    Note over Concierge: LLM synthesizes response WITHOUT exposing private vault data to logs
-    Concierge-->>Citizen: Vernacular advice with verified scheme benefits & portal links
+    Note over Concierge,SlyData: Private values are not included in the tool result
+    Concierge-->>Client: English-default advice with scheme sources and application steps
+    Client-->>Citizen: Display response
 ```
 
-1. **Parameter Separation**: The public `args` dictionary contains non-sensitive routing variables (`state: "karnataka"`, `education_level: "engineering"`, `occupation: "student"`).
-2. **Out-of-Band Transmission**: Sensitive variables can be segregated into `sly_data` only when the host supplies them through that channel; the registry does not establish this routing.
+1. **Parameter Separation**: The public `args` dictionary carries routing variables (`state`, `education_level`, `occupation`). Sensitive fields are not declared as tool parameters.
+2. **Out-of-Band Transmission**: The front-man schema declares the private fields, and the client sends them through `sly_data` after consent.
 3. **Local In-Memory Evaluation**: `SchemeEligibilityEngine` consumes both `args` and `sly_data` inside local Python memory.
-4. **Deployment responsibility**: This repository does not enforce model-prompt or external-log isolation. Deployments should avoid passing raw sensitive values in model-visible arguments and verify runtime logging behavior.
+4. **Deployment responsibility**: The tool rejects sensitive values in public tool arguments and does not return their values. Deployments must use a client that honors `sly_data` separation and verify their logging/tracing configuration.
 
 ---
 

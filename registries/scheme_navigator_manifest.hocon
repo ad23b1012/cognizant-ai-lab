@@ -1,0 +1,4 @@
+﻿{
+    include "registries/generated/manifest.hocon",
+    "scheme_navigator.hocon": true
+}

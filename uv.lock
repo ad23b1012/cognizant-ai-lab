@@ -3169,10 +3169,14 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "neuro-san-studio" },
+    { name = "python-dotenv" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "neuro-san-studio", specifier = ">=0.4.2" }]
+requires-dist = [
+    { name = "neuro-san-studio", specifier = ">=0.4.2" },
+    { name = "python-dotenv", specifier = ">=1.2.4" },
+]
 
 [[package]]
 name = "shellingham"

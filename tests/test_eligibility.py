@@ -30,13 +30,11 @@ def test_raichur_sc_student_eligibility(eligibility_engine):
     args = {
         "state": "karnataka",
         "occupation": "student",
-        "category": "SC",
-        "annual_income_inr": 150000,
         "education_level": "engineering",
         "age": 19,
         "class12_percentile": 88.5
     }
-    sly_data = {}
+    sly_data = {"privacy_consent": True, "social_category": "SC", "annual_income_inr": 150000}
     result = asyncio.run(eligibility_engine.async_invoke(args, sly_data))
 
     assert result["status"] == "SUCCESS"
@@ -55,13 +53,11 @@ def test_st_engineering_student_eligibility(eligibility_engine):
     """
     args = {
         "occupation": "student",
-        "category": "ST",
-        "annual_income_inr": 400000,
         "education_level": "engineering",
         "age": 20,
         "class12_percentile": 85.0
     }
-    sly_data = {}
+    sly_data = {"privacy_consent": True, "social_category": "ST", "annual_income_inr": 400000}
     result = asyncio.run(eligibility_engine.async_invoke(args, sly_data))
 
     eligible_ids = [s["scheme_id"] for s in result["eligible_schemes"]]
@@ -80,11 +76,8 @@ def test_young_small_farmer_full_eligibility(eligibility_engine):
         "state": "karnataka",
         "occupation": "farmer",
         "age": 28,
-        "land_acres": 3.0,
-        "annual_income_inr": 85000,
-        "is_taxpayer": False
     }
-    sly_data = {}
+    sly_data = {"privacy_consent": True, "land_acres": 3.0, "annual_income_inr": 85000, "is_taxpayer": False}
     result = asyncio.run(eligibility_engine.async_invoke(args, sly_data))
 
     eligible_ids = [s["scheme_id"] for s in result["eligible_schemes"]]
@@ -104,10 +97,8 @@ def test_older_farmer_age_limit_audit(eligibility_engine):
         "state": "karnataka",
         "occupation": "farmer",
         "age": 48,
-        "land_acres": 2.5,
-        "is_taxpayer": False
     }
-    sly_data = {}
+    sly_data = {"privacy_consent": True, "land_acres": 2.5, "is_taxpayer": False}
     result = asyncio.run(eligibility_engine.async_invoke(args, sly_data))
 
     eligible_ids = [s["scheme_id"] for s in result["eligible_schemes"]]
@@ -116,7 +107,7 @@ def test_older_farmer_age_limit_audit(eligibility_engine):
 
     ineligible_schemes = {s["scheme_id"]: s for s in result["ineligible_schemes"]}
     assert "FARM-005" in ineligible_schemes
-    assert "statutory entry age window of 18–40" in ineligible_schemes["FARM-005"]["why_not_eligible"]
+    assert "statutory entry window of 18–40 years" in ineligible_schemes["FARM-005"]["why_not_eligible"]
 
 
 def test_taxpayer_statutory_exclusion_audit(eligibility_engine):
@@ -127,11 +118,8 @@ def test_taxpayer_statutory_exclusion_audit(eligibility_engine):
     args = {
         "state": "karnataka",
         "occupation": "farmer",
-        "land_acres": 4.0,
-        "annual_income_inr": 650000,
-        "is_taxpayer": True
     }
-    sly_data = {}
+    sly_data = {"privacy_consent": True, "land_acres": 4.0, "annual_income_inr": 650000, "is_taxpayer": True}
     result = asyncio.run(eligibility_engine.async_invoke(args, sly_data))
 
     ineligible_schemes = {s["scheme_id"]: s for s in result["ineligible_schemes"]}
@@ -153,6 +141,7 @@ def test_sly_data_privacy_vaulting(eligibility_engine):
         "class12_percentile": 90.0
     }
     private_sly_data = {
+        "privacy_consent": True,
         "annual_income_inr": 120000,
         "social_category": "SC",
         "ration_card_tier": "BPL"
@@ -177,11 +166,14 @@ def test_missing_profile_fields_are_not_assumed_eligible(eligibility_engine):
 
 
 def test_invalid_values_and_string_boolean(eligibility_engine):
-    invalid = asyncio.run(eligibility_engine.async_invoke({"annual_income_inr": "unknown"}, {}))
+    invalid = asyncio.run(eligibility_engine.async_invoke({}, {
+        "privacy_consent": True,
+        "annual_income_inr": "unknown",
+    }))
     assert invalid["status"] == "INVALID_INPUT"
     result = asyncio.run(eligibility_engine.async_invoke({
-        "scheme_id": "FARM-001", "occupation": "farmer", "land_acres": 1, "is_taxpayer": "false"
-    }, {}))
+        "scheme_id": "FARM-001", "occupation": "farmer"
+    }, {"privacy_consent": True, "land_acres": 1, "is_taxpayer": "false"}))
     assert [s["scheme_id"] for s in result["eligible_schemes"]] == ["FARM-001"]
 
 

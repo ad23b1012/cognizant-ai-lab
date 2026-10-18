@@ -6,4 +6,5 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "neuro-san-studio>=0.4.2",
+    "python-dotenv>=1.2.4",
 ]
