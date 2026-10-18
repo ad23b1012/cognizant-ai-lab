@@ -22,7 +22,7 @@ This crisis of delivery stems from four structural bottlenecks in the welfare de
    Illiterate or semi-literate citizens are routinely exploited by unauthorized local brokers charging 20% to 30% commissions for welfare programs that are 100% free by law.
 
 ### 1.2 Our Solution & Mission
-**Scheme Navigator (YojanaMitra AI)** provides a Neuro-SAN agent network and a separate local CLI demo. Run `python main.py --agent` to launch the focused agent network and `nsflow` UI; run `python main.py` for direct local tool calls. The network:
+**Scheme Navigator (YojanaMitra AI)** provides a Neuro-SAN agent network and a separate local CLI demo. Run `uv run --env-file .env --no-sync ns run` (the primary launch command) to start the focused agent network and `nsflow` UI; run `uv run --no-sync python main.py` for direct local tool calls. The network:
 
 - Supports English by default and other configured languages when explicitly requested in the concierge prompt.
 - Evaluates profiles against implemented Python rules. Deterministic execution avoids LLM-generated decisions for those rules, but does not guarantee that criteria are current or complete.
@@ -33,7 +33,7 @@ This crisis of delivery stems from four structural bottlenecks in the welfare de
 - Checks reachability of configured official portals. Portal checks do not retrieve current announcements; optional fetch actions can parse PDF/HTML text from allowed HTTPS government domains.
 - Equips citizens with application guidance: state issuing authorities (*Nadakacheri, MeeSeva, DigiLocker, UIDAI*), common documents, and anti-fraud reminders.
 
-> **Implementation status:** The diagrams describe the Neuro-SAN flow launched with `python main.py --agent`. The default `python main.py` mode remains a local CLI that directly invokes coded tools.
+> **Implementation status:** The diagrams describe the Neuro-SAN flow launched with `uv run --env-file .env --no-sync ns run`. The local CLI remains a separate mode that directly invokes coded tools.
 
 ---
 

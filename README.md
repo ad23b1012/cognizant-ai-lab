@@ -209,15 +209,15 @@ python main.py
 python demo_cli.py
 ```
 
-### Live Neuro-SAN Agent Network
+### Live Neuro-SAN Agent Network (Primary Run Command)
 
-Set `GOOGLE_API_KEY` in `.env`, then launch the Scheme Navigator agent network and `nsflow` UI:
+Set `GOOGLE_API_KEY` in `.env`, then launch the Scheme Navigator agent network and `nsflow` UI from the repository root. This is the primary command for running the app:
 
 ```bash
-python main.py --agent
-# or
-uv run python main.py --agent
+uv run --env-file .env --no-sync ns run
 ```
+
+`ns run` loads the focused manifest and coded-tool path from `.env.example`, so select **scheme_navigator** in the `nsflow` interface. The `--no-sync` flag uses the dependencies you installed from `requirements.txt` without changing the environment. You can also run `ns run` after activating the virtual environment and loading the variables from `.env` into your shell.
 
 The dedicated manifest exposes Scheme Navigator without the unrelated example networks in the general development manifest. In `nsflow`, choose **scheme_navigator**. When eligibility checks report missing information, the concierge should ask one short follow-up at a time, offer numbered choices and **Other (please specify)**, then retry after your answer. It should offer **I don't know / Skip** when appropriate. Income, social category, landholding, and tax status must be collected only through a client-supported private `sly_data` field after consent; do not type them into chat. If the client has no private fields, dependent criteria cannot be checked in that session.
 
@@ -238,7 +238,7 @@ The persona results below are generated from this prototype's implemented rules.
 
 ### Neuro-SAN registry
 
-`registries/scheme_navigator.hocon` defines the live network. Use `python main.py --agent` to launch it with the dedicated `registries/scheme_navigator_manifest.hocon`; `python main.py` continues to launch the local terminal demo.
+`registries/scheme_navigator.hocon` defines the live network. Use `uv run --env-file .env --no-sync ns run` as the primary command to launch the dedicated `registries/scheme_navigator_manifest.hocon`; `uv run --no-sync python main.py` launches the separate local terminal demo.
 
 Eligibility conditions are implemented in Python for the supported scheme IDs. Adding a record to `data/schemes_db.json` alone does not add eligibility logic; unsupported IDs are reported without an eligibility decision. Portal ping results establish reachability only, and the returned static guidance is not a live announcement feed. The registry snapshot date and official source URLs are shown with screening results when available.
 
@@ -289,7 +289,7 @@ cognizant-ai-lab/
 |---|---|---|
 | **Problem Relevance** | 20% | Directly addresses India's **₹1,00,000 Crore unclaimed benefits crisis** by providing an accessible, transparent, and empathetic bridge for students and farmers. |
 | **Innovation** | 20% | Combines Python rule checks for implemented criteria, configurable `sly_data` handling, and government portal reachability checks. |
-| **Effective Use of Neuro-SAN** | 20% | Includes a **Front Man architecture** with specialized sub-agents (`ScholarshipSpecialist`, `FarmerWelfareSpecialist`), deterministic `CodedTools`, HOCON configuration, and a focused agent launch path via `python main.py --agent`. |
+| **Effective Use of Neuro-SAN** | 20% | Includes a **Front Man architecture** with specialized sub-agents (`ScholarshipSpecialist`, `FarmerWelfareSpecialist`), deterministic `CodedTools`, HOCON configuration, and a focused agent launch path via `ns run`. |
 | **Technical Implementation** | 15% | automated tests for the current prototype, a Rich interactive CLI, and threaded network requests exposed through async tools. |
 | **Impact Potential & Scalability** | 15% | The registry is structured for metadata additions; every new scheme also needs reviewed eligibility logic and tests. |
 | **Presentation & User Experience** | 10% | Rich terminal panels, scripted examples in four Indic languages, English-default concierge instructions in the registry, and submission materials. |

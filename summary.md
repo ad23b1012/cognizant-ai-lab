@@ -23,7 +23,7 @@ Every year, the Central and State Governments of India allocate over **₹3,00,0
 
 Scheme Navigator is architected around the **Front Man Multi-Agent Pattern**, declaratively defined in HOCON (`registries/scheme_navigator.hocon`):
 
-* **CitizenConcierge (Front Man Agent)**: The Neuro-SAN public interface, configured to default to English and switch to Telugu, Hindi, Kannada, or Tamil only when explicitly requested. When screening lacks details, it asks one follow-up at a time with numbered options and “Other (please specify).” Run it with `python main.py --agent`; the local CLI remains a separate direct-tool demo.
+* **CitizenConcierge (Front Man Agent)**: The Neuro-SAN public interface, configured to default to English and switch to Telugu, Hindi, Kannada, or Tamil only when explicitly requested. When screening lacks details, it asks one follow-up at a time with numbered options and “Other (please specify).” Run it with `uv run --env-file .env --no-sync ns run`; the local CLI remains a separate direct-tool demo.
 * **Cross-agent review and application support**: Every specialist result is reviewed by `VerificationAuditorAgent`, which can challenge and request one correction. For implemented rules, what-if analysis computes one-field numeric gaps using the same eligibility engine. A yes/no/not-sure readiness check flags common document, DBT, name-matching, and institution-verification risks with fixes.
 * **ScholarshipSpecialist (Subordinate Agent)**: Specialized in higher technical education, degree scholarships, and state fee reimbursement programs (Central Sector PM-USP CSSS, NMMSS, Top Class SC/ST, AP Jagananna Vidya & Vasathi Deevena, Karnataka SSP).
 * **FarmerWelfareSpecialist (Subordinate Agent)**: Dedicated to agricultural livelihood support, smallholder land categorization, and statutory exclusions (PM-KISAN, PMFBY Crop Insurance, Kisan Credit Cards, PMKSY Micro-Irrigation, PM-KMY Pension, Rythu Bharosa).
@@ -54,7 +54,7 @@ Scheme Navigator is architected around the **Front Man Multi-Agent Pattern**, de
 
 * **Automated Test Suite**: Automated unit tests are included; run them for current results. (`tests/test_eligibility.py` and `tests/test_live_fetcher.py`) verifying deterministic calculations, income edge cases, taxpayer exclusions, `sly_data` vaulting, portal reachability behavior, URL allowlisting, and PDF guideline ingestion.
 * **Interactive Terminal CLI (`demo_cli.py`)**: A local deterministic demo featuring 4 scripted citizen personas, consented custom profiling, portal reachability checks, and scripted language examples. It calls Python tools directly and does not run LLM or Neuro-SAN agents.
-* **Neuro-SAN runtime**: `python main.py --agent` launches the HOCON agent network and `nsflow` using the focused Scheme Navigator manifest.
+* **Neuro-SAN runtime**: `uv run --env-file .env --no-sync ns run` launches the HOCON agent network and `nsflow` using the focused Scheme Navigator manifest.
 * **Resilience & Dual-Tier Fallback**: Primary Google Gemini 3.1 Flash-Lite backed by automatic zero-retry failover to OpenRouter NVIDIA Nemotron 3.5 Lightning.
 
 ---
@@ -65,7 +65,7 @@ Scheme Navigator is architected around the **Front Man Multi-Agent Pattern**, de
 |---|---|---|
 | **Problem Relevance** | 20% | Directly targets India's **₹1,00,000 Crore unclaimed citizen benefits crisis**, empowering marginalized students and smallholder farmers. |
 | **Innovation** | 20% | Blends **deterministic Python statutory verification** (rule-based checks for implemented criteria) with **out-of-band `sly_data` privacy** and **live `.gov.in` portal sync**. |
-| **Effective Use of Neuro-SAN** | 20% | Includes a HOCON agent registry and a `main.py --agent` launch path for the focused `nsflow` demo. |
+| **Effective Use of Neuro-SAN** | 20% | Includes a HOCON agent registry and the primary `ns run` launch command for the focused `nsflow` demo. |
 | **Technical Implementation** | 15% | automated tests (run locally for current results), portal reachability checks wrapped for async callers, on-the-fly PDF parsing, and clean modular code architecture. |
 | **Impact & Scalability** | 15% | Scheme metadata can be added to `data/schemes_db.json`; eligibility behavior requires a supported Python rule implementation. Future integrations could include with national voice/telephony APIs (Bhashini / Twilio). |
 | **Presentation & UX** | 10% | Rich terminal demo with scripted examples in four Indic languages, English-default concierge instructions in the registry, and submission documentation. |
